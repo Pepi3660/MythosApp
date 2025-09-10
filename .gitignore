@@ -1,0 +1,49 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool/
+
+# IDEs y editores
+.idea/
+.vscode/
+*.iml
+
+# Archivos temporales y del sistema
+*.swp
+*.lock
+*.log
+*.tmp
+*.DS_Store
+*.bak
+*.orig
+
+# Builds
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks
+ios/Pods
+ios/Runner.xcworkspace
+android/.gradle
+android/app/build/
+android/build/
+macos/Flutter/ephemeral/
+web/.dart_tool/
+web/build/
+windows/Flutter/ephemeral/
+linux/Flutter/ephemeral/
+
+# Firebase y configuración local (si aplica)
+.env
+firebase_options.dart
+
+# Archivos generados por plataformas
+*.apk
+*.aab
+*.ipa
+
+# Otross
+coverage/
