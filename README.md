@@ -1,3 +1,21 @@
+
+# mythosapp
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+=======
 # 📱 MythosApp — Memoria Viva Nicaragua
 
 **MythosApp** es una aplicación educativa desarrollada como parte del reto **“Memoria Viva Nicaragua – Aficionado”**, con el objetivo de preservar, registrar y compartir los saberes populares, culturales y tradiciones del pueblo nicaragüense. La app involucra activamente al sistema educativo, familias y comunidades, garantizando que el patrimonio cultural llegue a las nuevas generaciones.
@@ -53,3 +71,4 @@ Este proyecto está licenciado bajo la licencia MIT. Ver archivo [LICENSE](LICEN
 ---
 
 > Proyecto educativo sin fines de lucro.
+
