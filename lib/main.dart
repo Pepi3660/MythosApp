@@ -1,21 +1,29 @@
+import 'package:firebase_core/firebase_core.dart'; //Libreria que permite el uso de firebase
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mythosapp/firebase_options.dart'; //Referencia al archivo que guarda las configuraciones de firebase
 import 'package:provider/provider.dart';
 
-import 'views/relatos/relatos_view.dart';
-import 'views/mapa/mapa_view.dart';
-import 'views/calendario/calendario_view.dart';
-import 'views/relatos/relatos_create_view.dart';
-import 'views/relatos/relato_detail_view.dart';
-
-import 'services/api_service.dart';
-import 'repositories/relatos_repository.dart';
-import 'viewmodels/relatos_vm.dart';
 import 'models/relato.dart';
+import 'repositories/relatos_repository.dart';
+import 'services/api_service.dart';
+import 'viewmodels/relatos_vm.dart';
+import 'views/calendario/calendario_view.dart';
+import 'views/mapa/mapa_view.dart';
+import 'views/relatos/relato_detail_view.dart';
+import 'views/relatos/relatos_create_view.dart';
+import 'views/relatos/relatos_view.dart';
 
-void main() {
+void main() async{
   final api = ApiService();
   final relatosRepo = RelatosRepository(api);
+
+  WidgetsFlutterBinding.ensureInitialized(); //asegura la inicializacion exitosa de todos los widgets
+
+  //Inicializaion de firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(MultiProvider(
     providers: [

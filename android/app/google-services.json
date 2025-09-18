@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1040775144661",
+    "project_id": "mythosapp-c7bec",
+    "storage_bucket": "mythosapp-c7bec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040775144661:android:b604cf7f05e3392fd8ee5c",
+        "android_client_info": {
+          "package_name": "com.example.mythosapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGF0MIf7LwllSJIifi6MuMyfL4cV88G28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
