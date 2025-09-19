@@ -2,27 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'views/relatos/relatos_view.dart';
-import 'views/mapa/mapa_view.dart';
-import 'views/calendario/calendario_view.dart';
-import 'views/relatos/relatos_create_view.dart';
-import 'views/relatos/relato_detail_view.dart';
-
 import 'services/api_service.dart';
 import 'repositories/relatos_repository.dart';
 import 'viewmodels/relatos_vm.dart';
 import 'models/relato.dart';
 
+import 'utils/app_theme.dart';
+import 'views/home/home_view.dart';
+import 'views/relatos/relatos_view.dart';
+import 'views/relatos/relatos_create_view.dart';
+import 'views/relatos/relato_detail_view.dart';
+import 'views/mapa/mapa_view.dart';
+import 'views/calendario/calendario_view.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final api = ApiService();
   final relatosRepo = RelatosRepository(api);
 
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (_) => RelatosVM(relatosRepo)),
-    ],
-    child: const MythosApp(),
-  ));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => RelatosVM(relatosRepo)),
+      ],
+      child: const MythosApp(),
+    ),
+  );
 }
 
 class MythosApp extends StatelessWidget {
@@ -31,22 +37,17 @@ class MythosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final router = GoRouter(
-      initialLocation: '/relatos',
+      initialLocation: '/home',
       routes: [
+        GoRoute(path: '/home', builder: (_, __) => const HomeView()),
         GoRoute(
           path: '/relatos',
           builder: (_, __) => const RelatosView(),
           routes: [
-            GoRoute(
-              path: 'crear',
-              builder: (_, __) => const RelatoCreateView(),
-            ),
+            GoRoute(path: 'crear', builder: (_, __) => const RelatoCreateView()),
             GoRoute(
               path: 'detalle',
-              builder: (ctx, state) {
-                final r = state.extra as Relato;
-                return RelatoDetailView(relato: r);
-              },
+              builder: (_, state) => RelatoDetailView(relato: state.extra as Relato),
             ),
           ],
         ),
@@ -55,67 +56,12 @@ class MythosApp extends StatelessWidget {
       ],
     );
 
-    // 🎨 Paleta Morado + Dorado
-    const kPrimary = Color(0xFF42085F);
-    const kSecondary = Color(0xFF530878);
-    const kAccent = Color(0xFFFFCF61);
-
-    final lightTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: kPrimary,
-        primary: kPrimary,
-        secondary: kSecondary,
-        tertiary: kAccent,
-        background: const Color(0xFFF8F7FB),
-        brightness: Brightness.light,
-      ),
-      scaffoldBackgroundColor: const Color(0xFFF8F7FB),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: kPrimary,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: kSecondary,
-        foregroundColor: Colors.white,
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFF1B1323)),
-        bodyMedium: TextStyle(color: Color(0xFF2A2230)),
-      ),
-    );
-
-    final darkTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: kPrimary,
-        primary: kPrimary,
-        secondary: kSecondary,
-        tertiary: kAccent,
-        background: const Color(0xFF17131C),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF17131C),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: kPrimary,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: kSecondary,
-        foregroundColor: Colors.white,
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Colors.white),
-        bodyMedium: TextStyle(color: Color(0xFFE6E0EA)),
-      ),
-    );
-
     return MaterialApp.router(
-      title: 'Memoria Viva',
+      title: 'Mythos App',
       routerConfig: router,
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      darkTheme: darkTheme,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
     );
   }
