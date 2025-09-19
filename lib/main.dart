@@ -7,8 +7,11 @@ import 'package:provider/provider.dart';
 import 'models/relato.dart';
 import 'repositories/relatos_repository.dart';
 import 'services/api_service.dart';
+import 'viewmodels/login_viewmodel.dart';
 import 'viewmodels/relatos_vm.dart';
 import 'views/calendario/calendario_view.dart';
+//Archivos del login
+import 'views/login/login_view.dart';
 import 'views/mapa/mapa_view.dart';
 import 'views/relatos/relato_detail_view.dart';
 import 'views/relatos/relatos_create_view.dart';
@@ -28,6 +31,7 @@ void main() async{
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => RelatosVM(relatosRepo)),
+      ChangeNotifierProvider(create: (_) => AuthViewModel()),  //inyeccion VM de la autentificacion para el login
     ],
     child: const MythosApp(),
   ));
@@ -39,8 +43,13 @@ class MythosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final router = GoRouter(
-      initialLocation: '/relatos',
+      initialLocation: '/login',
       routes: [
+        //Ruta del login
+        GoRoute(path: '/login',
+        builder: (_,__) => const LoginView(),
+        ),
+        //Ruta de los relatos
         GoRoute(
           path: '/relatos',
           builder: (_, __) => const RelatosView(),
