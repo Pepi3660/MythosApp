@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart'; //Libreria que permite el uso de firebase
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -37,8 +40,45 @@ void main() async{
   ));
 }
 
-class MythosApp extends StatelessWidget {
+class MythosApp extends StatefulWidget {
   const MythosApp({super.key});
+
+  @override
+  State<MythosApp> createState() => _MythosAppState();
+}
+
+class _MythosAppState extends State<MythosApp> {
+   late final AppLinks _appLinks; //Instancia Unica
+    StreamSubscription<Uri?>? _linkSub;
+    
+  @override
+  void initState() {
+    super.initState();
+
+    //Instanciamos AppLinks una sola vez
+    _appLinks = AppLinks();
+
+    //Suscribirse al stream: incluye el enlace inicial (cold start) y los siguientes
+    _linkSub = _appLinks.uriLinkStream.listen((uri) async {
+      if (!mounted || uri == null) return;
+
+      //Intentar completar el OTP (email link) en el ViewModel
+      final vm = context.read<AuthViewModel>();
+      final ok = await vm.tryCompleteMagicLinkSignIn(uri.toString());
+
+      //Si se completó el login por enlace mágico, navegar a /relatos
+      if (mounted && ok) context.go('/relatos');
+    }, onError: (e) {
+      // opcional: loggear errores de parsing
+    });
+  }
+
+  @override
+  void dispose() {
+    // Evitar fugas de memoria
+    _linkSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +112,7 @@ class MythosApp extends StatelessWidget {
       ],
     );
 
-    // 🎨 Paleta Morado + Dorado
+    //Paleta Morado + Dorado
     const kPrimary = Color(0xFF42085F);
     const kSecondary = Color(0xFF530878);
     const kAccent = Color(0xFFFFCF61);

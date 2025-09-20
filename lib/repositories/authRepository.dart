@@ -21,5 +21,11 @@ class AuthRepository {
     return _service.sendPasswordReset(email);             //Delego reset al servicio
   }
 
+  Future<void> updateDisplayName(String name) =>
+      _service.updateDisplayName(name);
+      
+  // -------- Google --------
+  Future<void> signInWithGoogle() => _service.signInWithGoogle();
+
   Stream<bool> authChanges() => _service.authChanges();   //Reexpongo el stream de cambios de auth
 }

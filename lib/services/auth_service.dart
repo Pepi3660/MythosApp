@@ -1,9 +1,10 @@
 //Servicio que encapsula las llamadas a firebaseAuth
 
-import 'package:firebase_auth/firebase_auth.dart';        //Importo FirebaseAuth para realizar la autenticación
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;       // -> Obtengo la instancia de FirebaseAuth
+  final FirebaseAuth _auth = FirebaseAuth.instance;       //Obtengo la instancia de FirebaseAuth
 
   /// Inicia sesión con correo y contraseña
   Future<void> signIn(String email, String password) async {
@@ -24,6 +25,35 @@ class FirebaseAuthService {
   ///Envio de un Correo de recuperación de contraseña
   Future<void> sendPasswordReset(String email) async {
     await _auth.sendPasswordResetEmail(email: email.trim()); //Solicito restablecimiento de contraseña
+  }
+
+  //Actualizar el nombre publico del usuario autenticado
+  Future<void> updateDisplayName(String displayName) async {
+    final u = _auth.currentUser;
+    if (u != null) {
+      await u.updateDisplayName(displayName.trim());
+      await u.reload();
+    }
+  }
+  
+  // ---------------- Google Sign-In --------------------
+  //Inicio de sesion / Resistro con google
+  Future<void> signInWithGoogle() async {
+    //Abre el flujo de Google para seleccionar la cuenta
+    final googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return; // usuario canceló el flujo
+
+    //Obtiene los tokens de autenticacion de google
+    final googleAuth = await googleUser.authentication;
+
+    //Crea una credencial de Firebase con dichos tokens
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    //Inicia sesión en Firebase con la credencial
+    await _auth.signInWithCredential(credential);
   }
 
   ///Stream para saber si hay usuario autenticado (true/false)

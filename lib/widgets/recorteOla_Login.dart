@@ -10,19 +10,20 @@ class RecorteOlaLogin extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path()
-      ..moveTo(0, 0);       //Inicio desde la izquierda y bajo al 70% alto
-    path.quadraticBezierTo(                               //Se dibuja una curva suave hacia el centro
+      ..lineTo(0, size.height * 0.07); //Punto de inicio de la ola
+    //Curva izquierda
+    path.quadraticBezierTo(
       size.width * 0.15, size.height * 0.20,
-      size.width * 0.48, size.height * 0.15,
+      size.width * 0.50, size.height * 0.10, //Se dibuja una curva suave hacia el centro
     );
-    path.quadraticBezierTo(                               //Completo la curva hacia la derecha
-      size.width * 0.85, size.height * 0.05,
-      size.width, 0,
+    path.quadraticBezierTo(//Curva hacia la derecha
+      size.width * 0.80, size.height * 0.005,
+      size.width, size.height * 0.05,
     );
-    path.lineTo(size.width, size.height);        // Bajo por el lado derecho
-    path.lineTo(0, size.height);                        //Subo recto hasta la esquina superior derecha
-    path.close();                                         //Cierro el path
-    return path;                                          //Devuelvo la forma resultante
+    path.lineTo(size.width, size.height); //Bajo por el lado derecho
+    path.lineTo(0, size.height); //Esquina superior derecha
+    path.close();                //Cierro el path
+    return path;                 //Devuelvo la forma resultante
   }
 
   @override

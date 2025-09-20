@@ -32,10 +32,18 @@ dependencies:
 
   # Abrir “Cómo llegar”
   url_launcher: ^6.3.0
+
   #Servicios de firebase utilizados
   firebase_core: ^4.1.0
   firebase_auth: ^6.0.2
+  google_sign_in: ^6.2.1
+
+  #Tipografia de google
   google_fonts: ^6.3.1
+  
+  #Manejador de los links para el otp
+  app_links: ^6.4.1
+  cloud_firestore: ^6.0.1
   
 
 dev_dependencies:

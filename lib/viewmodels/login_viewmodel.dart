@@ -1,16 +1,26 @@
 ///Maneja el estado de la UI y expone acciones (login, signup, reset).
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mythosapp/repositories/user_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../repositories/authOTPRepository.dart';
 import '../repositories/authRepository.dart';
 
 
 class AuthViewModel extends ChangeNotifier {
   final AuthRepository _repo;                             //Mantengo referencia al repositorio
+  final AuthOtpRepository _otpRepo;  //Guarda temporalmente el email a enviar el OTP
+  final UsuariosRepository _userepo;
 
-  AuthViewModel({AuthRepository? repo})
-      : _repo = repo ?? AuthRepository();                 //Inyecto repositorio o creo uno por defecto
-
+  AuthViewModel({AuthRepository? repo,
+  AuthOtpRepository? otpRepo,
+  UsuariosRepository? userepo })
+      : _repo = repo ?? AuthRepository(),                 //Inyecto repositorio o creo uno por defecto
+        _otpRepo = otpRepo ?? AuthOtpRepository(),
+        _userepo = userepo ?? UsuariosRepository();
+        
   bool _isLoading = false;                                //Flag de carga para la UI
   bool get isLoading => _isLoading;                       //Getter de solo lectura
 
@@ -50,16 +60,83 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Crea cuenta nueva
-  Future<bool> register(String email, String password) async {
+  Future<bool> registerEmail({required String name,required String email,required  String password}) async {
     _setLoading(true); errorMessage = null;               //Inicio flow con loading y limpio error
     try {
       await _repo.signUp(email, password);                //Delego registro
+      await _repo.updateDisplayName(name);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No se encontró el usuario luego del registro');
+
+      // 4) Crear/actualizar documento en Firestore
+      await _userepo.upsert(
+        uid: user.uid,
+        nombre: name,
+        email: user.email ?? email,
+        fotoUrl: user.photoURL,
+      );
       return true;
     } on Exception catch (e) {
       errorMessage = _mapError(e);                        //Mapeo errores
       return false;
     } finally {
       _setLoading(false);                                 //Quito loading
+    }
+  }
+
+   // Inicio de sesion con Google
+  Future<bool> signInOrRegisterWithGoogle() async {
+    _setLoading(true); errorMessage = null;
+    try {
+      await _repo.signInWithGoogle();
+      return true;
+    } on Exception catch (e) {
+      errorMessage = _mapError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // -------- OTP / Email Link --------
+  // Envía el email con el enlace mágico y guarda el email localmente.
+  Future<bool> sendMagicLink(String email) async {
+    _setLoading(true); errorMessage = null;
+    try {
+      await _otpRepo.sendMagicLink(email);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('magic_email', email.trim()); // guardo el email para completar luego
+      return true;
+    } on Exception catch (e) {
+      errorMessage = _mapError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Completa el login cuando recibes el deep link (lo llamas desde el widget raíz con app_links)
+  Future<bool> tryCompleteMagicLinkSignIn(String link) async {
+    _setLoading(true); errorMessage = null;
+    try {
+      if (!_otpRepo.isEmailLink(link)) {
+        errorMessage = 'El enlace recibido no es válido';
+        return false;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('magic_email');
+      if (email == null || email.isEmpty) {
+        errorMessage = 'No encontramos el correo asociado al enlace';
+        return false;
+      }
+      await _otpRepo.signInWithEmailLink(email: email, link: link);
+      await prefs.remove('magic_email'); // limpio el email temporal
+      return true;
+    } on Exception catch (e) {
+      errorMessage = _mapError(e);
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

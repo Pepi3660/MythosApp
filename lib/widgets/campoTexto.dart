@@ -29,7 +29,7 @@ class RoundedTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     //Colores locales utilizados
     const darkOliveGreen = Color(0xFF326430);
-    const lightGray = Color.fromARGB(255, 240, 241, 243);
+    const lightGreen = Color(0xFFD7E6DB);
 
     return TextFormField(
       controller: controller,                              //Vinculacion el controlador
@@ -39,7 +39,11 @@ class RoundedTextField extends StatelessWidget {
       autovalidateMode: AutovalidateMode.onUserInteraction,//Validacion tras interacción
       decoration: InputDecoration(
         hintText: hint,                                    //Sugerencia dentro del campo
-        filled: true, fillColor: lightGray,
+        hintStyle: const TextStyle(
+          color: darkOliveGreen,
+          fontSize: 16,
+        ),
+        filled: true, fillColor: lightGreen,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16, vertical: 14),
           prefixIcon: Icon(icon, color: darkOliveGreen),

@@ -1,7 +1,9 @@
 //Vista de la pantalla de inicio de secion
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';         //Importo Google Fonts para un look moderno
+import 'package:mythosapp/views/login/registerView.dart';
 import 'package:provider/provider.dart';
 
 import '../../viewmodels/login_viewmodel.dart';
@@ -79,7 +81,7 @@ class _LoginScreenState extends State<LoginView> {
                   const SizedBox(height: 8),
                   Text('Inicia Sesion con tu cuenta',
                       style: GoogleFonts.poppins(
-                        color: Colors.black54,
+                        color: Colors.black87,
                         fontSize: 14,
                       )),
                   const SizedBox(height: 25),
@@ -165,12 +167,14 @@ class _LoginScreenState extends State<LoginView> {
                             );
                             if (!mounted) return;           //Verifico que el widget exista aún
                             if (ok) {
+                              //Mensaje de login exitoso
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Inicio de sesión exitoso')),
                               );
-                              // Navigator.pushReplacement(...);
+                              // Redireccion a la pantalla de relatos
+                            context.go('/relatos');
                             } else {
-                              // -> Muestro el error amigable mapeado por el VM
+                              // -> Muestro el error
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(vm.errorMessage ?? 'Error desconocido')),
                               );
@@ -184,8 +188,12 @@ class _LoginScreenState extends State<LoginView> {
                           children: [
                             const Text("¿No tienes una cuenta?  "),
                             GestureDetector(
+                              //Navegacion a la Pantalla de registro
                               onTap: () {
-                                // -> Aquí podrías navegar a tu SignUpScreen
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const RegisterView()),
+                                  );
                               },
                               child: const Text(
                                 'Registrate Ahora',
