@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1040775144661",
+    "project_id": "mythosapp-c7bec",
+    "storage_bucket": "mythosapp-c7bec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040775144661:android:b604cf7f05e3392fd8ee5c",
+        "android_client_info": {
+          "package_name": "com.example.mythosapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1040775144661-3tqetgdrit9jo3q62664n140fc3nbb44.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGF0MIf7LwllSJIifi6MuMyfL4cV88G28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040775144661-3tqetgdrit9jo3q62664n140fc3nbb44.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1040775144661-69j0l4bmfk1575d395gtjadf5s47o6eu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mythosapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

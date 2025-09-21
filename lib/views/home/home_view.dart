@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../utils/responsive_utils.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -10,57 +12,109 @@ class HomeView extends StatelessWidget {
     final text = Theme.of(context).textTheme;
 
     final items = <_HomeItem>[
-      _HomeItem('Relatos', Icons.menu_book_outlined, '/relatos'),
-      _HomeItem('Mapa', Icons.map_outlined, '/mapa'),
-      _HomeItem('Calendario', Icons.event_outlined, '/calendario'),
-      _HomeItem('Biblioteca', Icons.local_library_outlined, '/biblioteca'), // futuro
-      _HomeItem('Juegos', Icons.extension_outlined, '/juegos'), // futuro
+      _HomeItem('Relatos', Icons.menu_book_outlined, '/relatos', 'Comparte historias de tu comunidad'),
+      _HomeItem('Mapa', Icons.map_outlined, '/mapa', 'Explora memorias geolocalizadas'),
+      _HomeItem('Calendario', Icons.event_outlined, '/calendario', 'Eventos culturales y festividades'),
+      _HomeItem('Biblioteca', Icons.local_library_outlined, '/biblioteca', 'Saberes populares y tradiciones'),
+      _HomeItem('Juegos', Icons.extension_outlined, '/juegos', 'Retos didácticos sobre identidad'),
+      _HomeItem('Perfil', Icons.person_outlined, '/perfil', 'Tu información y estadísticas'),
+      _HomeItem('Buscar', Icons.search_outlined, '/search', 'Encuentra contenido específico'),
+      _HomeItem('Configuración', Icons.settings_outlined, '/settings', 'Ajustes y privacidad'),
     ];
 
-    // Nombre de usuario (placeholder local, sin TODOs)
-    const nombre = 'Usuario';
+    // TODO: Reemplaza por el nombre real desde tu VM/usuario autenticado
+    const nombreUsuario = 'Visitante';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mythos App'),
+        title: Text(
+          'MythosApp',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: false,
         actions: [
           IconButton(
-            tooltip: 'Perfil',
-            onPressed: () {},
-            icon: const Icon(Icons.account_circle_outlined),
-          )
+            onPressed: () => context.go('/search'),
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            onPressed: () => context.go('/settings'),
+            icon: const Icon(Icons.settings),
+          ),
         ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-          children: [
-            Text(
-              'Hola, $nombre 👋\nBienvenido a MythosApp',
-              style: text.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '¿Qué te gustaría explorar hoy?',
-              style: text.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.primary,
+      body: ResponsiveContainer(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    'Hola, $nombreUsuario 👋',
+                    style: GoogleFonts.poppins(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '¿Qué te gustaría explorar hoy?',
+                    style: GoogleFonts.poppins(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 28),
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Sección destacada
+                  _buildFeaturedSection(context),
+                  const SizedBox(height: 32),
+                  
+                  Text(
+                    'Explorar Módulos',
+                    style: GoogleFonts.poppins(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Grid de módulos
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.08,
+            
+            // Grid responsive de módulos
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: ResponsiveUtils.responsiveValue(
+                  context: context,
+                  mobile: 2,
+                  tablet: 3,
+                  desktop: 4,
+                ),
+                mainAxisSpacing: ResponsiveUtils.isMobile(context) ? 12 : 16,
+                crossAxisSpacing: ResponsiveUtils.isMobile(context) ? 12 : 16,
+                childAspectRatio: ResponsiveUtils.responsiveValue(
+                  context: context,
+                  mobile: 1.0,
+                  tablet: 1.1,
+                  desktop: 1.2,
+                ),
               ),
-              itemBuilder: (_, i) => _HomeCard(item: items[i]),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _HomeCard(item: items[index]),
+                childCount: items.length,
+              ),
+            ),
+            
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 32),
             ),
           ],
         ),
@@ -73,7 +127,8 @@ class _HomeItem {
   final String title;
   final IconData icon;
   final String route;
-  const _HomeItem(this.title, this.icon, this.route);
+  final String description;
+  const _HomeItem(this.title, this.icon, this.route, this.description);
 }
 
 class _HomeCard extends StatelessWidget {
@@ -83,54 +138,133 @@ class _HomeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
+    final isMobile = ResponsiveUtils.isMobile(context);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => context.go(item.route),
-      child: Ink(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              scheme.primary.withValues(alpha: .10),
-              scheme.tertiary.withValues(alpha: .10),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Card(
+      elevation: 2,
+      shadowColor: scheme.shadow.withOpacity(0.1),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => context.go(item.route),
+        child: Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                scheme.primary.withOpacity(0.05),
+                scheme.tertiary.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: Icon(item.icon, size: 30, color: scheme.primary),
-              ),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  item.title,
-                  style: text.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      item.icon,
+                      size: isMobile ? 24 : 28,
+                      color: scheme.primary,
+                    ),
                   ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: scheme.onSurface.withOpacity(0.4),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                item.title,
+                style: GoogleFonts.poppins(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: scheme.primary,
-                  child: const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+              const SizedBox(height: 4),
+              if (!isMobile)
+                Text(
+                  item.description,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: scheme.onSurface.withOpacity(0.6),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
-  }
+   }
+}
+
+// Método helper para la sección destacada
+Widget _buildFeaturedSection(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
+  
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          scheme.primary,
+          scheme.primary.withOpacity(0.8),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '🇳🇮 Memoria Viva Nicaragua',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Preserva, registra y comparte los saberes populares y tradiciones de nuestro pueblo.',
+          style: GoogleFonts.poppins(
+            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+            color: Colors.white.withOpacity(0.9),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () => context.go('/relatos/crear'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: scheme.primary,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+          child: Text(
+            'Compartir Relato',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
