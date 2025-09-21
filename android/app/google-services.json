@@ -12,7 +12,20 @@
           "package_name": "com.example.mythosapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1040775144661-07iahqr7la8ps1uan54ovspsq0b5umij.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mythosapp",
+            "certificate_hash": "c3061e72764da9a4d5b00f2aa9325a38251dd1da"
+          }
+        },
+        {
+          "client_id": "1040775144661-3tqetgdrit9jo3q62664n140fc3nbb44.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDGF0MIf7LwllSJIifi6MuMyfL4cV88G28"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040775144661-3tqetgdrit9jo3q62664n140fc3nbb44.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1040775144661-69j0l4bmfk1575d395gtjadf5s47o6eu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mythosapp"
+              }
+            }
+          ]
         }
       }
     }

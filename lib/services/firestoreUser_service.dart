@@ -11,7 +11,7 @@ class FirestoreUserService {
     required String email,
     String? fotoUrl,
   }) async {
-    final ref = _db.collection('Usuarios').doc(uid);
+    final ref = _db.collection('usuarios').doc(uid);
 
     await ref.set({
       'uid': uid,

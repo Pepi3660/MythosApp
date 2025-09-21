@@ -37,6 +37,7 @@ class RoundedTextField extends StatelessWidget {
       obscureText: obscure,                                //Activo/Desactivo ocultamiento
       validator: validator,                                //Asignacion del validador
       autovalidateMode: AutovalidateMode.onUserInteraction,//Validacion tras interacción
+      style: const TextStyle(color: darkOliveGreen, fontSize: 16),
       decoration: InputDecoration(
         hintText: hint,                                    //Sugerencia dentro del campo
         hintStyle: const TextStyle(

@@ -1,5 +1,6 @@
 //Vista de registro de una nueva cuenta
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +36,9 @@ class _RegisterViewState extends State<RegisterView> {
     return RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,4}$').hasMatch(v); //Formato correcto del correo
   }
 
+  //Estado de la vista si el otp ya fue completado  o no
+  bool _OTPVer = false;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +61,7 @@ class _RegisterViewState extends State<RegisterView> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true, //Evita que el teclado tape los campos
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -134,81 +139,74 @@ class _RegisterViewState extends State<RegisterView> {
                     ),
 
                     const SizedBox(height: 40),
-
-                    //Botón principal
+                    //Flujo de registsro con OTP
+                    //Envio del OTP
                     PrimaryButton(
-                      label: 'Registrarse',
+                      label: 'Enviar código al correo',
                       loading: vm.isLoading,
                       onPressed: () async {
-                        // 1) Validar formulario
-                        if (!_formKey.currentState!.validate()) return;
-
-                        // 2) Registrar con correo/contraseña a través del ViewModel
-                        final ok = await vm.registerEmail(
-                          name: _nameCtrl.text,
-                          email: _emailCtrl.text,
-                          password: _passCtrl.text,
-                        );
-
+                        if (!_isEmailValid) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Ingresa un correo válido')),
+                          );
+                          return;
+                        }
+                        final ok = await vm.sendMagicLink(_emailCtrl.text);
                         if (!mounted) return;
 
-                        //Mostrar resultado y navegar a /relatos
                         if (ok) {
+                          setState(() => _OTPVer = true); //Habilita el boton de registro
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Cuenta creada con éxito')),
+                            const SnackBar(content: Text('Hemos enviado un enlace a tu correo.')),
                           );
-                          context.go('/relatos');
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(vm.errorMessage ?? 'No fue posible crear la cuenta')),
+                            SnackBar(content: Text(vm.errorMessage ?? 'No se pudo enviar el enlace')),
                           );
                         }
                       },
                     ),
+
+                    const SizedBox(height: 20),
+                    //Botón de Registro
+                     // if (_OTPVer)
+                      PrimaryButton(
+                        label: 'Registrarse',
+                        loading: vm.isLoading,
+                        onPressed: () async {
+                          //Validar formulario
+                          if (!_formKey.currentState!.validate()) return;
+                          // con correo+password (Auth.signUp), debemos cerrar esa sesión temporal.
+                          try {
+                            await FirebaseAuth.instance.signOut();
+                          } catch (_) {}
+                          
+                          //Registrar con correo/contraseña a través del ViewModel
+                          final ok = await vm.registerEmail(
+                            name: _nameCtrl.text,
+                            email: _emailCtrl.text,
+                            password: _passCtrl.text,
+                          );
+
+                          if (!mounted) return;
+
+                          //Mostrar resultado y navegar a /relatos
+                          if (ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Cuenta creada con éxito')),
+                            );
+                            context.go('/relatos');
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(vm.errorMessage ?? 'No fue posible crear la cuenta')),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Fila Recuerdame y olvidaste tu contraseña
-              Row(
-                children: [
-                  Checkbox(
-                    value: false,
-                    onChanged: (_) {},
-                    side: const BorderSide(color: fernGreen),
-                    checkColor: Colors.white,
-                    activeColor: fernGreen,
-                  ),
-                  const Text('Recuerdame'),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {
-                      // Aquí podrías abrir tu flujo de "olvidé mi contraseña".
-                      // Si quieres reutilizar, podrías enviar reset password con el email ingresado.
-                      final email = _emailCtrl.text.trim();
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Ingresa tu correo para recuperar')),
-                        );
-                        return;
-                      }
-                      context.read<AuthViewModel>().sendMagicLink(email);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Te enviamos un enlace a tu correo')),
-                      );
-                    },
-                    child: const Text(
-                      '¿Olvidaste tu contraseña?',
-                      style: TextStyle(color: darkOliveGreen),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
               // Separador
               Row(
                 children: [

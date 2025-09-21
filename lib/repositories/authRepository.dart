@@ -1,6 +1,8 @@
 //Abstrae el servicio y orquesta reglas del dominio.
 //Esto permite testear y reemplazar fácilmente la fuente de datos.
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../services/auth_service.dart';
 
 class AuthRepository {
@@ -25,7 +27,8 @@ class AuthRepository {
       _service.updateDisplayName(name);
       
   // -------- Google --------
-  Future<void> signInWithGoogle() => _service.signInWithGoogle();
+  Future<UserCredential> signInWithGoogle() =>
+      _service.signInWithGoogle();
 
   Stream<bool> authChanges() => _service.authChanges();   //Reexpongo el stream de cambios de auth
 }

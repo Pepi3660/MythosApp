@@ -168,7 +168,7 @@ class _MythosAppState extends State<MythosApp> {
     );
 
     return MaterialApp.router(
-      title: 'Memoria Viva',
+      title: 'Mythos',
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: lightTheme,

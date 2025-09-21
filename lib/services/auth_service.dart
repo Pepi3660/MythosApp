@@ -38,10 +38,12 @@ class FirebaseAuthService {
   
   // ---------------- Google Sign-In --------------------
   //Inicio de sesion / Resistro con google
-  Future<void> signInWithGoogle() async {
+Future<UserCredential> signInWithGoogle() async {
     //Abre el flujo de Google para seleccionar la cuenta
     final googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) return; // usuario canceló el flujo
+    if (googleUser == null) {
+        throw FirebaseAuthException(code: 'sign_in_canceled', message: 'Cancelado por el usuario');
+      } // usuario canceló el flujo
 
     //Obtiene los tokens de autenticacion de google
     final googleAuth = await googleUser.authentication;
@@ -53,7 +55,7 @@ class FirebaseAuthService {
     );
 
     //Inicia sesión en Firebase con la credencial
-    await _auth.signInWithCredential(credential);
+    return  await _auth.signInWithCredential(credential);
   }
 
   ///Stream para saber si hay usuario autenticado (true/false)

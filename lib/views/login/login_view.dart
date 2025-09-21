@@ -23,7 +23,9 @@ class _LoginScreenState extends State<LoginView> {
   final _emailCtrl = TextEditingController();            //Controlador del campo Email
   final _passCtrl = TextEditingController();             //Controlador del campo Password
 
-  static const double _kWaveHeight = 300;
+  //Controll de la altura del texto
+  static const double _kWaveHeight = 260;
+
   @override
   void dispose() {
     _emailCtrl.dispose();                                 //Libero el controlador de Email
@@ -63,10 +65,24 @@ class _LoginScreenState extends State<LoginView> {
               ),
             ),
           ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 90),
+            curve: Curves.easeOut,
+
+            // ✅ Calculamos la posición según el teclado
+            left: 24,
+            right:24,
+            // top dinámico: debajo de la ola cuando no hay teclado,
+            // y sube cuando aparece, pero sin invadir la imagen.
+            top: () {
+              final kb = MediaQuery.of(context).viewInsets.bottom;  // altura del teclado
+              final baseTop = _kWaveHeight + 15;                    // bajo la ola
+              final dynamicTop = (baseTop - kb).clamp(32.0, baseTop);
+              return dynamicTop.toDouble();
+            }(),
           //Contenido de la pantalla
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, _kWaveHeight + 12, 24, 12), //Margen interno
+          child: SafeArea(
+              child:SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -209,6 +225,7 @@ class _LoginScreenState extends State<LoginView> {
                     ),
                   ),
                 ],
+                )
               ),
             ),
           ),

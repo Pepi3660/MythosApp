@@ -9,7 +9,7 @@ class AuthOtpService {
 
   /// Configuración del enlace de acción (ActionCodeSettings)
   ActionCodeSettings _actionCodeSettings() => ActionCodeSettings(
-        url: 'https://mythosapp-c7bec.firebaseapp.com/__/auth/action', //tu dominio configurado
+        url: 'https://mythosapp-c7bec.firebaseapp.com/finish', //tu dominio configurado
         handleCodeInApp: true,                    //manejar el link en la app
         androidPackageName: 'com.example.mythosapp',
         androidInstallApp: true,
