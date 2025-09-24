@@ -8,16 +8,18 @@ class AuthOtpRepository {
       : _service = service ?? AuthOtpService();
 
     //Enviio del correo magico
-  Future<void> sendMagicLink(String email) =>
-      _service.sendMagicLink(email);
+  Future<void> sendEmail(String email) =>
+  _service.sendEmail(email);
 
-  bool isEmailLink(String link) =>
-      _service.isEmailLink(link);
+  bool isEmailLink(String link) => _service.isEmailLink(link);
 
-    //Inicio de sesion con el correo y el link
   Future<void> signInWithEmailLink({
     required String email,
     required String link,
   }) =>
-      _service.signInWithEmailLink(email: email, emailLink: link);
+  _service.signInWithEmailLink(email: email, emailLink: link);
+
+  String? extractOtpFromUri(Uri uri) => _service.extractOtpFromUri(uri);
+
+  String get fixedLetter => _service.fixedLetter;
 }

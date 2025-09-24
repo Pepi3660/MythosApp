@@ -1,6 +1,5 @@
 //Vista de registro de una nueva cuenta
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/botonPrincipal.dart';
 import '../../widgets/campoTexto.dart';
+import 'verificationOTP.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -36,8 +36,6 @@ class _RegisterViewState extends State<RegisterView> {
     return RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,4}$').hasMatch(v); //Formato correcto del correo
   }
 
-  //Estado de la vista si el otp ya fue completado  o no
-  bool _OTPVer = false;
 
   @override
   void initState() {
@@ -155,9 +153,20 @@ class _RegisterViewState extends State<RegisterView> {
                         if (!mounted) return;
 
                         if (ok) {
-                          setState(() => _OTPVer = true); //Habilita el boton de registro
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Hemos enviado un enlace a tu correo.')),
+                          );
+                        // Redirección a la pantalla de verificación
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OtpVerificationView(
+                                name: _nameCtrl.text.trim(),
+                                email: _emailCtrl.text.trim(),
+                                password: _passCtrl.text,
+                                // prefilledOtp: 'M1234', // opcional si lo obtienes de un deep link
+                              ),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -168,41 +177,6 @@ class _RegisterViewState extends State<RegisterView> {
                     ),
 
                     const SizedBox(height: 20),
-                    //Botón de Registro
-                     // if (_OTPVer)
-                      PrimaryButton(
-                        label: 'Registrarse',
-                        loading: vm.isLoading,
-                        onPressed: () async {
-                          //Validar formulario
-                          if (!_formKey.currentState!.validate()) return;
-                          // con correo+password (Auth.signUp), debemos cerrar esa sesión temporal.
-                          try {
-                            await FirebaseAuth.instance.signOut();
-                          } catch (_) {}
-                          
-                          //Registrar con correo/contraseña a través del ViewModel
-                          final ok = await vm.registerEmail(
-                            name: _nameCtrl.text,
-                            email: _emailCtrl.text,
-                            password: _passCtrl.text,
-                          );
-
-                          if (!mounted) return;
-
-                          //Mostrar resultado y navegar a /relatos
-                          if (ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Cuenta creada con éxito')),
-                            );
-                            context.go('/relatos');
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(vm.errorMessage ?? 'No fue posible crear la cuenta')),
-                            );
-                          }
-                        },
-                      ),
                   ],
                 ),
               ),

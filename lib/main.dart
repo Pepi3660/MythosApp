@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mythosapp/firebase_options.dart'; //Referencia al archivo que guarda las configuraciones de firebase
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/relato.dart';
 import 'repositories/relatos_repository.dart';
@@ -40,6 +41,20 @@ void main() async{
   ));
 }
 
+// ------------ Args para /otp ------------
+class OtpArgs {
+  final String name;
+  final String email;
+  final String password;
+  final String? prefilledOtp;
+  OtpArgs({
+    required this.name,
+    required this.email,
+    required this.password,
+    this.prefilledOtp,
+  });
+}
+
 class MythosApp extends StatefulWidget {
   const MythosApp({super.key});
 
@@ -64,12 +79,37 @@ class _MythosAppState extends State<MythosApp> {
 
       //Intentar completar el OTP (email link) en el ViewModel
       final vm = context.read<AuthViewModel>();
-      final ok = await vm.tryCompleteMagicLinkSignIn(uri.toString());
+      final ok = await vm.tryExtractOtpFromUri(uri);
+      if (!mounted) return;
 
-      //Si se completó el login por enlace mágico, navegar a /relatos
-      if (mounted && ok) context.go('/relatos');
+      if (ok != null && ok.isNotEmpty) {
+        // Recuperamos lo que guardaste al pulsar el botón (en RegisterView)
+        final prefs = await SharedPreferences.getInstance();
+        final name = (prefs.getString('pending_name') ?? '').trim();
+        final email = (prefs.getString('otp_email') ?? '').trim(); // vm.sendEmailOtp lo guarda
+        final password = (prefs.getString('pending_password') ?? '').trim();
+
+        if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+          // Navega a la verificación con OTP prellenado
+          if (!mounted) return;
+          context.push(
+            '/otp',
+            extra: OtpArgs(
+              name: name,
+              email: email,
+              password: password,
+              prefilledOtp: ok, // 'M1234'
+            ),
+          );
+        }
+        return; // no seguimos con email-link si ya usamos OTP
+      }
+
+      // Si no trae OTP, puedes omitir o intentar completar el email-link clásico:
+      // final ok = await vm.tryCompleteEmailLink(uri.toString());
+      // if (mounted && ok) context.go('/relatos');
     }, onError: (e) {
-      // opcional: loggear errores de parsing
+      // opcional: log de error
     });
   }
 

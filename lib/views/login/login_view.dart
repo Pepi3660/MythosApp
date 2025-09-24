@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginView> {
 
   //Controll de la altura del texto
   static const double _kWaveHeight = 260;
+  static const darkOliveGreen = Color(0xFF326430);
 
   @override
   void dispose() {
@@ -39,7 +40,6 @@ class _LoginScreenState extends State<LoginView> {
     final vm = context.watch<AuthViewModel>();
 
     //Colores locales
-    const darkOliveGreen = Color(0xFF326430);
     const fernGreen = Color(0xFF457A43);
 
     return Scaffold(
@@ -69,14 +69,14 @@ class _LoginScreenState extends State<LoginView> {
             duration: const Duration(milliseconds: 90),
             curve: Curves.easeOut,
 
-            // ✅ Calculamos la posición según el teclado
+            //Calculamos la posición según el teclado
             left: 24,
             right:24,
             // top dinámico: debajo de la ola cuando no hay teclado,
             // y sube cuando aparece, pero sin invadir la imagen.
             top: () {
               final kb = MediaQuery.of(context).viewInsets.bottom;  // altura del teclado
-              final baseTop = _kWaveHeight + 15;                    // bajo la ola
+              final baseTop = _kWaveHeight + 10;                    // bajo la ola
               final dynamicTop = (baseTop - kb).clamp(32.0, baseTop);
               return dynamicTop.toDouble();
             }(),
@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginView> {
                         color: Colors.black87,
                         fontSize: 14,
                       )),
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 15),
                   // Formulario con validaciones
                   Form(
                     key: _formKey,                           // -> Asocio la clave para validar
@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginView> {
                             return ok ? null : 'Correo inválido';
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
                         // Campo de contraseña con toggle de visibilidad
                         RoundedTextField(
                           controller: _passCtrl,             //Vinculo controlador
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginView> {
                           },
                           onToggleVisibility: vm.toggleObscure, //Conecto el toggle al VM
                         ),
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 10),
                         // Fila: Recordarme + Olvidé contraseña
                         Row(
                           children: [
@@ -142,7 +142,10 @@ class _LoginScreenState extends State<LoginView> {
                               checkColor: Colors.white,                      //Color del “check”
                               activeColor: fernGreen,
                             ),
-                            const Text('Recuerdame'),       // Etiqueta del checkbox
+                            const Text('Recuerdame',
+                            style: TextStyle(
+                              color: Colors.black87
+                            ),),       // Etiqueta del checkbox
                             const Spacer(),                  //Empujo el botón a la derecha
                             TextButton(
                               onPressed: () async {          //Acción para recuperar contraseña
@@ -170,7 +173,7 @@ class _LoginScreenState extends State<LoginView> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 10),
                         // Botón principal de Login
                         PrimaryButton(
                           label: 'Iniciar Sesión',                    //Texto del botón
@@ -198,11 +201,57 @@ class _LoginScreenState extends State<LoginView> {
                           },
                         ),
                         const SizedBox(height: 20),
+                        // Separador
+                        Row(
+                          children: [
+                            Expanded(child: Container(height: 1, color: Colors.black12)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'Inicia Sesión con:',
+                                style: GoogleFonts.poppins(color: Colors.black54, fontSize: 12),
+                              ),
+                            ),
+                            Expanded(child: Container(height: 1, color: Colors.black12)),
+                          ],
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        //Botón social: SOLO Google
+                        _SocialCircle(
+                          icon: Icons.g_mobiledata,
+                          onTap: vm.isLoading
+                              ? null
+                              : () async {
+                                  // Iniciar sesión / registro con Google
+                                  final ok = await vm.signInOrRegisterWithGoogle();
+
+                                  if (!mounted) return;
+
+                                  //Mostrar resultado y navegar a /relatos si fue exitoso
+                                  if (ok) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Inicio con Google exitoso')),
+                                    );
+                                    context.go('/relatos');
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(vm.errorMessage ?? 'No fue posible usar Google')),
+                                    );
+                                  }
+                                },
+                        ),
+                        const SizedBox(height: 15),
                         // Pantalla de REgistro
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("¿No tienes una cuenta?  "),
+                            const Text('¿No tienes una cuenta?',
+                            style: TextStyle(
+                              color: Colors.black87
+                            ),
+                            ),
                             GestureDetector(
                               //Navegacion a la Pantalla de registro
                               onTap: () {
@@ -230,6 +279,32 @@ class _LoginScreenState extends State<LoginView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Botón social circular simple
+class _SocialCircle extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  const _SocialCircle({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap, // si es null, queda deshabilitado
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(color: Colors.black12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
+        ),
+        child: const Icon(Icons.g_mobiledata, size: 32, color: _LoginScreenState.darkOliveGreen),
       ),
     );
   }

@@ -1,7 +1,5 @@
 ///Maneja el estado de la UI y expone acciones (login, signup, reset).
 
-import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mythosapp/repositories/user_repository.dart';
@@ -23,6 +21,7 @@ class AuthViewModel extends ChangeNotifier {
         _otpRepo = otpRepo ?? AuthOtpRepository(),
         _userepo = userepo ?? UsuariosRepository();
         
+  //Estado de la interfaz
   bool _isLoading = false;                                //Flag de carga para la UI
   bool get isLoading => _isLoading;                       //Getter de solo lectura
 
@@ -34,14 +33,6 @@ class AuthViewModel extends ChangeNotifier {
 
   String? errorMessage;
 
-  //Generados de un ID unico en base-36
-  String _generateUserId() {
-  final millis = DateTime.now().millisecondsSinceEpoch;
-  final base36 = millis.toRadixString(36); //convierto el número a base-36
-  final random2 = Random().nextInt(90) + 10; // 10–99
-  return 'U$base36$random2';
-  
-  }
   /// Alterna visibilidad de la contraseña y notifica a la vista
   void toggleObscure() {
     _obscure = !_obscure;                                 //Cambio el estado local
@@ -79,7 +70,6 @@ class AuthViewModel extends ChangeNotifier {
       await _repo.signUp(email.trim(), password);                //Delego registro
       await _repo.updateDisplayName(name.trim());
       final user = FirebaseAuth.instance.currentUser;
-      final autoId = _generateUserId();
 
       if (user == null) throw FirebaseAuthException(code: 'user-null');
 
@@ -114,8 +104,6 @@ class AuthViewModel extends ChangeNotifier {
             throw FirebaseAuthException(code: 'user-null', message: 'No se obtuvo el usuario');
           }
 
-          final autoId = _generateUserId();
-
           // Upsert en Firestore tras Google
           await _userepo.upsert(
             uid: user.uid,
@@ -137,64 +125,59 @@ class AuthViewModel extends ChangeNotifier {
       }
 
   // -------- OTP / Email Link --------
-  // Envía el email con el enlace mágico y guarda el email localmente.
+  // Envía el email con el enlace mágico que va acompañado de un OTP local.
   Future<bool> sendMagicLink(String email) async {
     _setLoading(true); errorMessage = null;
     try {
-      await _otpRepo.sendMagicLink(email);
+      await _otpRepo.sendEmail(email.trim());
+      //Guarda el correo para futuras verificaciones
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('magic_email', email.trim()); // guardo el email para completar luego
+      await prefs.setString('OTP_email', email.trim());
       return true;
-    } on Exception catch (e) {
-      errorMessage = _mapError(e);
+    } catch (e) {
+      errorMessage = 'No fue posible enviar el correo';
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
-  // Completa el login cuando recibes el deep link (lo llamas desde el widget raíz con app_links)
-  Future<bool> tryCompleteMagicLinkSignIn(String link) async {
+  //Pasa el valor del ORP a la pantalla de verificación para autocompletar.
+  Future<String?> tryExtractOtpFromUri(Uri uri) async {
+    try {
+      // El repo expone extractOtpFromUri()
+      return _otpRepo.extractOtpFromUri(uri);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  //Compara contra el 'local_otp' guardado por el service en SharedPreferences.
+  //Si coincide, devuelve true; si no, deja errorMessage.
+  Future<bool> verifyLocalOtp(String fullCode) async {
     _setLoading(true);
     errorMessage = null;
     try {
-      if (!_otpRepo.isEmailLink(link)) {
-        errorMessage = 'El enlace recibido no es válido';
-        return false;
-      }
       final prefs = await SharedPreferences.getInstance();
-      final email = (prefs.getString('magic_email') ?? '').trim();
-      if (email.isEmpty) {
-        errorMessage = 'No encontramos el correo asociado al enlace';
+      final saved = (prefs.getString('local_otp') ?? '').trim().toUpperCase();
+      final entered = fullCode.trim().toUpperCase();
+
+      if (saved.isEmpty) {
+        errorMessage = 'No encontramos un código pendiente';
         return false;
       }
-      await _otpRepo.signInWithEmailLink(email: email, link: link);
-      await prefs.remove('magic_email');
-
-      // (Opcional recomendado) upsert tras completar OTP
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await _userepo.upsert(
-          uid: user.uid,
-          nombre: user.displayName ?? '',
-          email: user.email ?? email,
-          fotoUrl: null,
-        );
-      }
-
-      return true;
-    } on FirebaseAuthException catch (e) {
-      errorMessage = _mapError(e);
-      return false;
+      final ok = saved == entered;
+      if (!ok) errorMessage = 'Código inválido';
+      return ok;
     } catch (_) {
-      errorMessage = 'No se pudo completar el enlace';
+      errorMessage = 'Error verificando el código';
       return false;
     } finally {
       _setLoading(false);
     }
   }
-
-  /// Envía correo de recuperación
+  
+  // Envía correo de recuperación
   Future<bool> reset(String email) async {
     _setLoading(true);
     errorMessage = null;

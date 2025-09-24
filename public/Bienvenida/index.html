@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Mythos</title>
+    <style>
+        body {
+        background-color: #f8f7fb;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 40px;
+        }
+        h1 {
+        color: #326430;
+        }
+        #otp {
+        margin-top: 20px;
+        font-size: 32px;
+        font-weight: bold;
+        color: #BC8C07;
+        }
+    </style>
+    </head>
+    <body>
+    <h1>¡Bienvenido a Mythos!</h1>
+    <p>Gracias por registrarte. Este es tu código de verificación:</p>
+
+    <!-- Aquí se mostrará el código OTP pasado en la URL como ?code=XXXX -->
+    <div id="otp">Cargando...</div>
+
+    <script>
+        // Extrae el parámetro "code" de la URL
+        const params = new URLSearchParams(location.search);
+        const otp = params.get('otp') || params.get('code');
+
+        // Si existe el código, lo muestra, si no, muestra un mensaje genérico
+        document.getElementById('otp').textContent = otp
+            ? `Código: ${otp}`
+            : 'No se encontró un código de verificación.';
+    </script>
+    </body>
+    </html>
