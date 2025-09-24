@@ -12,8 +12,8 @@ import '../../models/relato.dart';
 import '../../viewmodels/relatos_vm.dart';
 
 
-MapType _mapType = MapType.normal;          // ✅ tipo de mapa
-String? _municipioFilter;                   // ✅ filtro simple por municipio
+MapType _mapType = MapType.normal;         
+String? _municipioFilter;                  
 final Set<String> _tiposActivos = {'texto','imagen','audio','video'};
 
 class MapaView extends StatefulWidget {
