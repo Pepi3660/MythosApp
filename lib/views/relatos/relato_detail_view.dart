@@ -1,54 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../models/relato.dart';
+import 'package:go_router/go_router.dart';
 
 class RelatoDetailView extends StatelessWidget {
-  final Relato relato;
   const RelatoDetailView({super.key, required this.relato});
+  final Relato relato;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(relato.titulo)),
+      appBar: AppBar(
+        title: const Text('Detalle del relato'),
+        actions: [
+          IconButton(
+            tooltip: 'Ver mapa',
+            onPressed: () => context.go('/mapa'),
+            icon: const Icon(Icons.map_outlined),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            children: [
-              Icon(Icons.place, color: cs.tertiary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${relato.municipio}${relato.barrio != null ? " • ${relato.barrio}" : ""}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          Text(relato.titulo, style: theme.textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(relato.autorNombre, style: theme.textTheme.labelLarge),
+          const SizedBox(height: 16),
           if ((relato.cuerpo ?? '').isNotEmpty)
             Text(relato.cuerpo!),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 6,
-            children: [
-              Chip(label: Text(relato.tipo)),
-              ...relato.tags.map((t) => Chip(label: Text('#$t'))),
-            ],
+            spacing: 8,
+            children: (relato.tags).map((t) => Chip(label: Text('#$t'))).toList(),
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () async {
-              final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${relato.lat},${relato.lng}');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-            icon: const Icon(Icons.directions_outlined),
-            label: const Text('Cómo llegar'),
+            onPressed: () => context.go('/mapa'),
+            icon: const Icon(Icons.place_outlined),
+            label: const Text('Ubicación en el mapa'),
           ),
         ],
       ),

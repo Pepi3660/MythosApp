@@ -9,7 +9,7 @@ class FirestoreUserService {
     required String uid,
     required String nombre,
     required String email,
-    String? fotoUrl,
+    String? fotoUrl, String? photoUrl,
   }) async {
     final ref = _db.collection('usuarios').doc(uid);
 

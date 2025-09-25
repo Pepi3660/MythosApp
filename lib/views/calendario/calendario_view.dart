@@ -6,20 +6,55 @@ class CalendarioView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendario')),
-      body: const Center(child: Text('Calendario cultural (pendiente)')),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
-        onDestinationSelected: (i) {
-          if (i == 0) context.go('/relatos');
-          if (i == 1) context.go('/mapa');
-          if (i == 2) context.go('/calendario');
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.article_outlined), label: 'Relatos'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Mapa'),
-          NavigationDestination(icon: Icon(Icons.event), label: 'Calendario'),
+      body: Column(
+        children: [
+          // Encabezado liviano con volver
+          Container(
+            color: cs.surface,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Row(
+              children: [
+                Material(
+                  color: cs.surface,
+                  shape: const CircleBorder(),
+                  elevation: 2,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      final r = GoRouter.of(context);
+                      if (r.canPop()) {
+                        r.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.arrow_back_rounded),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Calendario',
+                  style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: Center(
+              child: Text(
+                'Calendario cultural (pendiente)',
+                style: text.bodyLarge,
+              ),
+            ),
+          ),
         ],
       ),
     );
