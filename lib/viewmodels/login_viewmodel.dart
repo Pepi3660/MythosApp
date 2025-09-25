@@ -1,5 +1,7 @@
 ///Maneja el estado de la UI y expone acciones (login, signup, reset).
 
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mythosapp/repositories/user_repository.dart';
@@ -14,13 +16,28 @@ class AuthViewModel extends ChangeNotifier {
   final AuthOtpRepository _otpRepo;  //Guarda temporalmente el email a enviar el OTP
   final UsuariosRepository _userepo;
 
-  AuthViewModel({AuthRepository? repo,
-  AuthOtpRepository? otpRepo,
-  UsuariosRepository? userepo })
-      : _repo = repo ?? AuthRepository(),                 //Inyecto repositorio o creo uno por defecto
+  /// ¿Hay sesión iniciada?
+  bool get isAuthenticated => FirebaseAuth.instance.currentUser != null;
+
+  /// Opcional pero MUY útil: re-notificar cuando cambia el estado de FirebaseAuth
+  late final StreamSubscription<User?> _authSub;
+  
+  AuthViewModel({AuthRepository? repo, AuthOtpRepository? otpRepo, UsuariosRepository? userepo})
+      : _repo = repo ?? AuthRepository(),
         _otpRepo = otpRepo ?? AuthOtpRepository(),
-        _userepo = userepo ?? UsuariosRepository();
-        
+        _userepo = userepo ?? UsuariosRepository() {
+    // Escucha cambios de sesión para que el router vuelva a evaluar redirect
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      notifyListeners();
+    });
+  }
+
+    @override
+  void dispose() {
+    _authSub.cancel();
+    super.dispose();
+  }
+  
   //Estado de la interfaz
   bool _isLoading = false;                                //Flag de carga para la UI
   bool get isLoading => _isLoading;                       //Getter de solo lectura
