@@ -2,7 +2,9 @@
 //Servicio que encapsula las llamadas a firebaseAuth
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;       //Obtengo la instancia de FirebaseAuth
@@ -59,6 +61,28 @@ Future<UserCredential> signInWithGoogle() async {
     return  await _auth.signInWithCredential(credential);
   }
 
+  // Cierre de sesión unificado.
+  Future<void> signOut() async {
+    //Cerrar sesión de Google si no es web (GoogleSignIn móvil)
+    if (!kIsWeb) {
+      try {
+        await GoogleSignIn().signOut();
+      } catch (_) {
+        
+      }
+    }
+    //Cerrar sesión de Firebase
+    await _auth.signOut();
+
+    // 3) Limpiar claves usadas por el flujo OTP / registro
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('magic_email');
+    await prefs.remove('otp_email');
+    await prefs.remove('local_otp');
+    await prefs.remove('pending_name');
+    await prefs.remove('pending_password');
+  }
+  
   ///Stream para saber si hay usuario autenticado (true/false)
   Stream<bool> authChanges() =>                           //Expongo un stream booleano simplificado
       _auth.authStateChanges().map((user) => user != null);

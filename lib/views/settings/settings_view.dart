@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
+
 import '../../services/permission_service.dart';
-import '../../utils/responsive_utils.dart';
+import '../../viewmodels/login_viewmodel.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -452,29 +453,30 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => _showLogoutDialog(context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(
-          'Cerrar Sesión',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+//Cerrar Sesion
+Widget _buildLogoutButton(BuildContext context) {
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: () => _showLogoutDialog(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
-    );
-  }
+      child: Text(
+        'Cerrar Sesión',
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  );
+}
 
   Future<void> _togglePermission(Permission permission, bool enable) async {
     if (enable) {
@@ -691,38 +693,36 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Cerrar Sesión',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+
+/// Diálogo de confirmación
+void _showLogoutDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Confirmar'),
+      content: const Text('¿Seguro que deseas cerrar sesión?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx), // cancelar
+          child: const Text('Cancelar'),
         ),
-        content: Text(
-          '¿Estás seguro que deseas cerrar sesión?',
-          style: GoogleFonts.poppins(),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(ctx); // cerrar el diálogo
+
+            // Llamar al ViewModel para cerrar sesión
+            final authVM = context.read<AuthViewModel>();
+            await authVM.signOut();
+
+            // Redirigir al login
+            if (context.mounted) {
+              context.go('/login');
+            }
+          },
+          child: const Text('Cerrar sesión'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.poppins(),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implementar cierre de sesión
-            },
-            child: Text(
-              'Cerrar Sesión',
-              style: GoogleFonts.poppins(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 }

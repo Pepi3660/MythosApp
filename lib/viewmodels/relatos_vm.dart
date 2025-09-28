@@ -1,91 +1,60 @@
-// lib/viewmodels/relatos_vm.dart
+//Logica que controla la vista de los relatos
+
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
 import '../models/relato.dart';
-import '../repositories/relatos_repository.dart';
+import '../services/RelatoService.dart';
 
 class RelatosVM extends ChangeNotifier {
-  final RelatosRepository repo;
-  RelatosVM(this.repo);
+  final RelatoService _service;
+  RelatosVM(this._service);
 
-  List<Relato> relatos = [];
   bool cargando = false;
   String? error;
+  List<Relato> relatos = [];
 
-  // filtros actuales (opcional)
-  String? fDepartamento;
-  String? fMunicipio;
-  String? fBarrio;
-  String? fTag;
-
-  Future<void> cargar({
-    String? departamento,
-    String? municipio,
-    String? barrio,
-    String? tag,
-  }) async {
-    cargando = true;
-    error = null;
-    notifyListeners();
+  Future<void> cargar() async {
     try {
-      relatos = await repo.listar(
-        departamento: departamento ?? fDepartamento,
-        municipio: municipio ?? fMunicipio,
-        barrio: barrio ?? fBarrio,
-        tag: tag ?? fTag,
-      );
-      relatos.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-      fDepartamento = departamento ?? fDepartamento;
-      fMunicipio = municipio ?? fMunicipio;
-      fBarrio = barrio ?? fBarrio;
-      fTag = tag ?? fTag;
+      cargando = true; error = null; notifyListeners();
+      relatos = await _service.feed();
     } catch (e) {
       error = e.toString();
     } finally {
-      cargando = false;
-      notifyListeners();
+      cargando = false; notifyListeners();
     }
   }
 
-  Future<bool> crear({
-    required String titulo,
-    String? cuerpo,
-    required String tipo,
-    String? departamento,
-    required String municipio,
-    String? barrio,
-    List<String> tags = const [],
-    List<String> media = const [],
-    double? lat,
-    double? lng,
-  }) async {
+  Future<String> crearTexto(String texto, {GeoPoint? ubicacion}) async {
     try {
-      final ok = await repo.crear(
-        titulo: titulo,
-        cuerpo: cuerpo,
-        tipo: tipo,
-        departamento: departamento,
-        municipio: municipio,
-        barrio: barrio,
-        tags: tags,
-        media: media,
-        lat: lat,
-        lng: lng,
+      cargando = true; notifyListeners();
+      final id = await _service.crearRelato(
+        tipoP: 'texto',
+        contenido: texto,
+        ubicacion: ubicacion,
       );
-      if (ok) {
-        // recargar lista rápida
-        await cargar();
-      }
-      return ok;
-    } catch (_) {
-      return false;
+      await cargar();
+      return id;
+    } finally {
+      cargando = false; notifyListeners();
     }
   }
 
-  Relato? byId(String id) {
+  Future<String> crearImagen(File imagen, {GeoPoint? ubicacion}) async {
     try {
-      return relatos.firstWhere((r) => r.id == id);
-    } catch (_) {
-      return null;
+      cargando = true; notifyListeners();
+      final id = await _service.crearRelato(
+        tipoP: 'imagen',
+        contenido: '',
+        imagen: imagen,
+        ubicacion: ubicacion,
+      );
+      await cargar();
+      return id;
+    } finally {
+      cargando = false; notifyListeners();
     }
   }
 }

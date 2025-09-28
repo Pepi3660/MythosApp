@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mythosapp/main.dart';
 import 'package:provider/provider.dart';
 
 import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/botonPrincipal.dart';
 import '../../widgets/campoTexto.dart';
-import 'verificationOTP.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -52,14 +52,17 @@ class _RegisterViewState extends State<RegisterView> {
     super.dispose();
   }
 
+  
   @override
   Widget build(BuildContext context) {
     //Obtenemos el ViewModel para invocar registro y Google
     final vm = context.watch<AuthViewModel>();
+  final cs = Theme.of(context).colorScheme;   // ColorScheme actual (claro/oscuro)
+    final tt = Theme.of(context).textTheme;     // TextTheme actual
 
     return Scaffold(
       resizeToAvoidBottomInset: true, //Evita que el teclado tape los campos
-      backgroundColor: Colors.white,
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -71,7 +74,7 @@ class _RegisterViewState extends State<RegisterView> {
                 'Bienvenido a Mythos',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  color: darkOliveGreen,
+                  color: fernGreen,
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                 ),
@@ -80,10 +83,7 @@ class _RegisterViewState extends State<RegisterView> {
               Text(
                 'Crea tu nueva cuenta',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: Colors.black87,
-                  fontSize: 14,
-                ),
+                style: tt.bodyMedium
               ),
               const SizedBox(height: 30),
               //Formulario de registro
@@ -149,25 +149,22 @@ class _RegisterViewState extends State<RegisterView> {
                           );
                           return;
                         }
-                        final ok = await vm.sendMagicLink(_emailCtrl.text);
+                        final ok = await vm.sendEmail(_emailCtrl.text);
                         if (!mounted) return;
 
                         if (ok) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Hemos enviado un enlace a tu correo.')),
                           );
-                        // Redirección a la pantalla de verificación
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => OtpVerificationView(
-                                name: _nameCtrl.text.trim(),
-                                email: _emailCtrl.text.trim(),
-                                password: _passCtrl.text,
-                                // prefilledOtp: 'M1234', // opcional si lo obtienes de un deep link
-                              ),
-                            ),
-                          );
+                        context.go(
+                          '/otp',
+                          extra: OtpArgs(
+                            name: _nameCtrl.text.trim(),
+                            email: _emailCtrl.text.trim(),
+                            password: _passCtrl.text,
+                            // prefilledOtp: 'M1234', // si algún día lo traes del deep link
+                          ),
+                        );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(vm.errorMessage ?? 'No se pudo enviar el enlace')),
@@ -184,15 +181,15 @@ class _RegisterViewState extends State<RegisterView> {
               // Separador
               Row(
                 children: [
-                  Expanded(child: Container(height: 1, color: Colors.black12)),
+                  Expanded(child: Container(height: 1, color: cs.outlineVariant)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       'Registrarse con:',
-                      style: GoogleFonts.poppins(color: Colors.black54, fontSize: 12),
+                      style: tt.bodyMedium?.copyWith(color: cs.onSurface.withOpacity(0.7)),
                     ),
                   ),
-                  Expanded(child: Container(height: 1, color: Colors.black12)),
+                  Expanded(child: Container(height: 1, color: cs.outlineVariant)),
                 ],
               ),
 
@@ -214,7 +211,7 @@ class _RegisterViewState extends State<RegisterView> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Inicio con Google exitoso')),
                           );
-                          context.go('/relatos');
+                          context.go('/app');
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(vm.errorMessage ?? 'No fue posible usar Google')),
@@ -230,8 +227,8 @@ class _RegisterViewState extends State<RegisterView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '¿Ya tienes una cuenta? ',
-                    style: GoogleFonts.poppins(color: Colors.black54),
+                    '¿Ya tienes una cuenta?  ',
+                    style: tt.bodyMedium,
                   ),
                   GestureDetector(
                     onTap: () => context.pop(), // vuelve al login
@@ -261,19 +258,21 @@ class _SocialCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;   // ColorScheme actual (claro/oscuro)
+
     return InkWell(
       onTap: onTap, // si es null, queda deshabilitado
       borderRadius: BorderRadius.circular(28),
       child: Container(
-        width: 56,
-        height: 56,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white,
+          color: cs.surface,
           border: Border.all(color: Colors.black12),
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
         ),
-        child: const Icon(Icons.g_mobiledata, size: 32, color: _RegisterViewState.darkOliveGreen),
+        child: Icon(icon, size: 40, color: cs.primary),
       ),
     );
   }

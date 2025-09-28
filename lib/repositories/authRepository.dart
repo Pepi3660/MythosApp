@@ -25,7 +25,10 @@ class AuthRepository {
 
   Future<void> updateDisplayName(String name) =>
       _service.updateDisplayName(name);
-      
+
+  //Cerrar Sesion
+  Future<void> signOut() => _service.signOut();
+  
   // -------- Google --------
   Future<UserCredential> signInWithGoogle() =>
       _service.signInWithGoogle();

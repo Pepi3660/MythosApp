@@ -1,5 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/relato.dart';
+import '../../viewmodels/relatos_vm.dart';
 
 class PerfilView extends StatelessWidget {
   const PerfilView({super.key});
@@ -8,6 +15,17 @@ class PerfilView extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    //Usuario Firebase
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = (user?.displayName?.trim().isNotEmpty ?? false)
+        ? user!.displayName!.trim()
+        : (user?.email ?? 'Usuario');
+    final photoUrl = user?.photoURL;
+
+    //Mis relatos (desde VM)
+    final vm = context.watch<RelatosVM>();
+    final myRelatos = vm.relatos.where((r) => _isMine(r, user)).toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -35,27 +53,42 @@ class PerfilView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 20),
-                      // Avatar del usuario
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: scheme.onPrimary,
-                            width: 3,
+
+                      //Avatar del usuario (foto Firebase o icono por defecto)
+                      if (photoUrl != null && photoUrl.isNotEmpty)
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: scheme.onPrimary,
+                          child: CircleAvatar(
+                            radius: 37,
+                            backgroundImage: NetworkImage(photoUrl),
+                            backgroundColor: scheme.secondary,
                           ),
-                          color: scheme.secondary,
+                        )
+                      else
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: scheme.onPrimary,
+                              width: 3,
+                            ),
+                            color: scheme.secondary,
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            size: 40,
+                            color: scheme.onSecondary,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: scheme.onSecondary,
-                        ),
-                      ),
+
                       const SizedBox(height: 12),
+
+                      //Nombre del usuario (Firebase)
                       Text(
-                        'María González',
+                        displayName,
                         style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
@@ -63,7 +96,7 @@ class PerfilView extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Guardiana de tradiciones',
+                        'Guardiana/o de tradiciones',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: scheme.onPrimary.withOpacity(0.8),
@@ -78,7 +111,6 @@ class PerfilView extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () {
-                  // Navegar a configuraciones
                   _showSettingsBottomSheet(context);
                 },
               ),
@@ -92,19 +124,23 @@ class PerfilView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Estadísticas del usuario
-                  _buildStatsSection(context),
+                  // Estadísticas del usuario (relatos compartidos reales; lo demás provisional)
+                  _buildStatsSection(context, myRelatosCount: myRelatos.length),
                   const SizedBox(height: 24),
                   
-                  // Mis contribuciones
-                  _buildContributionsSection(context),
+                  // Mis contribuciones (lista real de mis relatos, o mensaje vacío)
+                  _buildContributionsSection(
+                      context,
+                      allRelatos: vm.relatos, // la lista completa de relatos
+                      currentUserId: user!.uid,
+                    ),
                   const SizedBox(height: 24),
                   
-                  // Opciones del perfil
+                  // Opciones del perfil (provisional)
                   _buildProfileOptions(context),
                   const SizedBox(height: 24),
                   
-                  // Información adicional
+                  // Información adicional (provisional)
                   _buildAdditionalInfo(context),
                 ],
               ),
@@ -115,7 +151,16 @@ class PerfilView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsSection(BuildContext context) {
+  bool _isMine(Relato r, User? user) {
+    if (user == null) return false;
+    // r.idU es un DocumentReference a 'usuarios/{uid}'
+    final ref = r.idU;
+    if (ref == null) return false;
+    return ref.id == user.uid; // .id del DocumentReference es el UID
+  }
+
+  // SECCIONES
+  Widget _buildStatsSection(BuildContext context, {required int myRelatosCount}) {
     final scheme = Theme.of(context).colorScheme;
     
     return Card(
@@ -138,7 +183,7 @@ class PerfilView extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    '12',
+                    '$myRelatosCount',           // relatos del usuario
                     'Relatos\nCompartidos',
                     Icons.menu_book,
                     scheme.primary,
@@ -147,7 +192,7 @@ class PerfilView extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    '8',
+                    '8',                          // provisional
                     'Eventos\nCreados',
                     Icons.event,
                     scheme.secondary,
@@ -156,7 +201,7 @@ class PerfilView extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    '156',
+                    '156',                        // provisional
                     'Puntos de\nCultura',
                     Icons.star,
                     scheme.tertiary,
@@ -170,6 +215,7 @@ class PerfilView extends StatelessWidget {
     );
   }
 
+//Relatos
   Widget _buildStatItem(BuildContext context, String value, String label, IconData icon, Color color) {
     return Column(
       children: [
@@ -207,66 +253,103 @@ class PerfilView extends StatelessWidget {
     );
   }
 
-  Widget _buildContributionsSection(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Mis Contribuciones',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Ver todas las contribuciones
-                  },
-                  child: Text(
-                    'Ver todas',
+    Widget _buildContributionsSection(
+      BuildContext context, {
+      required List<Relato> allRelatos,
+      required String currentUserId,
+    }) {
+      final scheme = Theme.of(context).colorScheme;
+      final locale = Localizations.localeOf(context).languageCode;
+
+      // Filtrar relatos creados por el usuario actual
+      final myRelatos = allRelatos.where((r) {
+        // Si guardaste como UID string:
+        return r.idU == currentUserId;
+
+        // O si usas DocumentReference:
+        // return r.userRef.id == currentUserId;
+      }).toList();
+
+      if (myRelatos.isEmpty) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Aún no has publicado',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: scheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ),
+        );
+      }
+
+      final sorted = [...myRelatos]
+        ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+      final recent = sorted.take(3).toList();
+
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Mis Contribuciones',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
                     ),
                   ),
+                  TextButton(
+                    onPressed: () {
+                      context.push('/relatos?user=$currentUserId');
+                    },
+                    child: Text(
+                      'Ver todas',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              for (final r in recent)
+                _buildContributionItem(
+                  context,
+                  _titleFromContent(r),
+                  r.tipoP == 'texto' ? 'Relato de texto' : 'Relato con imagen',
+                  r.tipoP == 'texto'
+                      ? Icons.menu_book_outlined
+                      : Icons.image_outlined,
+                  DateFormat.yMMMd(locale).add_Hm().format(r.fechaCreacion),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildContributionItem(
-              context,
-              'La Leyenda del Güegüense',
-              'Relato tradicional',
-              Icons.menu_book_outlined,
-              '2 días',
-            ),
-            _buildContributionItem(
-              context,
-              'Festival de Santo Domingo',
-              'Evento cultural',
-              Icons.event_outlined,
-              '1 semana',
-            ),
-            _buildContributionItem(
-              context,
-              'Receta de Nacatamal',
-              'Saber culinario',
-              Icons.restaurant_outlined,
-              '2 semanas',
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+  // Título rápido derivado del contenido (si no tienes campo 'titulo')
+  String _titleFromContent(Relato r) {
+    if (r.tipoP == 'imagen') return 'Relato con imagen';
+    final t = r.contenido.trim();
+    if (t.isEmpty) return 'Relato de texto';
+    final firstBreak = t.indexOf('\n');
+    final firstDot = t.indexOf('.');
+    int cut = t.length;
+    if (firstDot > 0) cut = firstDot + 1;
+    if (firstBreak > 0) cut = cut < firstBreak ? cut : firstBreak;
+    final head = t.substring(0, cut).trim();
+    return head.length <= 80 ? head : '${head.substring(0, 80)}…';
   }
 
   Widget _buildContributionItem(BuildContext context, String title, String subtitle, IconData icon, String time) {
@@ -335,27 +418,21 @@ class PerfilView extends StatelessWidget {
             'Editar Perfil',
             'Actualiza tu información personal',
             Icons.edit_outlined,
-            () {
-              // Navegar a editar perfil
-            },
+            () {},
           ),
           _buildOptionItem(
             context,
             'Mis Favoritos',
             'Relatos y eventos guardados',
             Icons.favorite_outline,
-            () {
-              // Navegar a favoritos
-            },
+            () {},
           ),
           _buildOptionItem(
             context,
             'Historial',
             'Tu actividad en la aplicación',
             Icons.history_outlined,
-            () {
-              // Navegar a historial
-            },
+            () {},
           ),
           _buildOptionItem(
             context,
@@ -366,21 +443,6 @@ class PerfilView extends StatelessWidget {
               _showSettingsBottomSheet(context);
             },
           ),
-          /*_buildOptionItem(
-            context,
-            'Cerrar Sesión',
-            'Salir de tu cuenta',
-            Icons.logout_outlined,
-            () async {
-              final authViewModel = context.read<AuthViewModel>();
-              await authViewModel.signOut();
-              if (context.mounted) {
-                context.go('/auth/login');
-              }
-            },
-            showDivider: false,
-            isDestructive: true,
-          ),*/
         ],
       ),
     );
@@ -402,10 +464,7 @@ class PerfilView extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Icon(
-            icon,
-            color: iconColor,
-          ),
+          leading: Icon(icon, color: iconColor),
           title: Text(
             title,
             style: GoogleFonts.poppins(
@@ -421,17 +480,11 @@ class PerfilView extends StatelessWidget {
               color: scheme.onSurface.withOpacity(0.6),
             ),
           ),
-          trailing: Icon(
-            Icons.chevron_right,
-            color: scheme.onSurface.withOpacity(0.4),
-          ),
+          trailing: Icon(Icons.chevron_right, color: scheme.onSurface.withOpacity(0.4)),
           onTap: onTap,
         ),
         if (showDivider)
-          Divider(
-            height: 1,
-            color: scheme.outlineVariant,
-          ),
+          Divider(height: 1, color: scheme.outlineVariant),
       ],
     );
   }
@@ -467,9 +520,7 @@ class PerfilView extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      // Mostrar información de la app
-                    },
+                    onPressed: () {},
                     child: Text(
                       'Acerca de',
                       style: GoogleFonts.poppins(
@@ -482,9 +533,7 @@ class PerfilView extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      // Contactar soporte
-                    },
+                    onPressed: () {},
                     child: Text(
                       'Soporte',
                       style: GoogleFonts.poppins(
@@ -549,20 +598,8 @@ class SettingsBottomSheet extends StatelessWidget {
                   context,
                   'Apariencia',
                   [
-                    _buildSettingItem(
-                      context,
-                      'Tema',
-                      'Claro, Oscuro o Automático',
-                      Icons.palette_outlined,
-                      () {},
-                    ),
-                    _buildSettingItem(
-                      context,
-                      'Idioma',
-                      'Español',
-                      Icons.language_outlined,
-                      () {},
-                    ),
+                    _buildSettingItem(context, 'Tema', 'Claro, Oscuro o Automático', Icons.palette_outlined, () {}),
+                    _buildSettingItem(context, 'Idioma', 'Español', Icons.language_outlined, () {}),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -570,20 +607,8 @@ class SettingsBottomSheet extends StatelessWidget {
                   context,
                   'Privacidad',
                   [
-                    _buildSettingItem(
-                      context,
-                      'Permisos',
-                      'Gestionar permisos de la app',
-                      Icons.security_outlined,
-                      () {},
-                    ),
-                    _buildSettingItem(
-                      context,
-                      'Datos y Privacidad',
-                      'Control de información personal',
-                      Icons.privacy_tip_outlined,
-                      () {},
-                    ),
+                    _buildSettingItem(context, 'Permisos', 'Gestionar permisos de la app', Icons.security_outlined, () {}),
+                    _buildSettingItem(context, 'Datos y Privacidad', 'Control de información personal', Icons.privacy_tip_outlined, () {}),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -591,20 +616,8 @@ class SettingsBottomSheet extends StatelessWidget {
                   context,
                   'Notificaciones',
                   [
-                    _buildSettingItem(
-                      context,
-                      'Nuevos Relatos',
-                      'Recibir notificaciones',
-                      Icons.notifications_outlined,
-                      () {},
-                    ),
-                    _buildSettingItem(
-                      context,
-                      'Eventos Culturales',
-                      'Recordatorios de eventos',
-                      Icons.event_note_outlined,
-                      () {},
-                    ),
+                    _buildSettingItem(context, 'Nuevos Relatos', 'Recibir notificaciones', Icons.notifications_outlined, () {}),
+                    _buildSettingItem(context, 'Eventos Culturales', 'Recordatorios de eventos', Icons.event_note_outlined, () {}),
                   ],
                 ),
               ],
@@ -630,9 +643,7 @@ class SettingsBottomSheet extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Card(
-          child: Column(children: items),
-        ),
+        Card(child: Column(children: items)),
       ],
     );
   }
@@ -647,10 +658,7 @@ class SettingsBottomSheet extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     
     return ListTile(
-      leading: Icon(
-        icon,
-        color: scheme.primary,
-      ),
+      leading: Icon(icon, color: scheme.primary),
       title: Text(
         title,
         style: GoogleFonts.poppins(
@@ -666,10 +674,7 @@ class SettingsBottomSheet extends StatelessWidget {
           color: scheme.onSurface.withOpacity(0.6),
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: scheme.onSurface.withOpacity(0.4),
-      ),
+      trailing: Icon(Icons.chevron_right, color: scheme.onSurface.withOpacity(0.4)),
       onTap: onTap,
     );
   }

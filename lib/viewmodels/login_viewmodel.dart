@@ -27,8 +27,8 @@ class AuthViewModel extends ChangeNotifier {
         _otpRepo = otpRepo ?? AuthOtpRepository(),
         _userepo = userepo ?? UsuariosRepository() {
     // Escucha cambios de sesión para que el router vuelva a evaluar redirect
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
-      notifyListeners();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((User? user) {
+          // manejar user
     });
   }
 
@@ -50,19 +50,19 @@ class AuthViewModel extends ChangeNotifier {
 
   String? errorMessage;
 
-  /// Alterna visibilidad de la contraseña y notifica a la vista
+  // Alterna visibilidad de la contraseña y notifica a la vista
   void toggleObscure() {
     _obscure = !_obscure;                                 //Cambio el estado local
     notifyListeners();                                    //Notifico a los listeners para que redibujen
   }
 
-  /// Actualiza el valor de “Recordarme”
+  // Actualiza el valor de “Recordarme”
   void setRemember(bool value) {
     _rememberMe = value;                                  //Persiste en memoria del ViewModel
     notifyListeners();                                    //Notifico cambio
   }
 
-  /// Ejecuta el inicio de sesión y maneja errores comunes
+  // Ejecuta el inicio de sesión y maneja errores comunes
   Future<bool> login(String email, String password) async {
     _setLoading(true);                                    //Activo indicador de carga
     errorMessage = null;
@@ -80,7 +80,7 @@ class AuthViewModel extends ChangeNotifier {
         }
       }
   
-  /// Crea cuenta nueva
+  // Crea cuenta nueva
   Future<bool> registerEmail({required String name,required String email,required  String password}) async {
     _setLoading(true); errorMessage = null;               //Inicio flow con loading y limpio error
     try {
@@ -143,7 +143,7 @@ class AuthViewModel extends ChangeNotifier {
 
   // -------- OTP / Email Link --------
   // Envía el email con el enlace mágico que va acompañado de un OTP local.
-  Future<bool> sendMagicLink(String email) async {
+  Future<bool> sendEmail(String email) async {
     _setLoading(true); errorMessage = null;
     try {
       await _otpRepo.sendEmail(email.trim());
@@ -156,6 +156,20 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  //Cerrar Sesion
+  Future<void> signOut() async {
+    _setLoading(true);
+    errorMessage = null;
+    try {
+      await _repo.signOut();
+    } catch (e) {
+      errorMessage = 'No se pudo cerrar sesión';
+    } finally {
+      _setLoading(false);
+      notifyListeners(); // asegura refresco
     }
   }
 
@@ -220,13 +234,15 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// Actualiza el estado de carga y notifica
+  //Cerrar sesion
+
+  // Actualiza el estado de carga y notifica
   void _setLoading(bool value) {
     _isLoading = value;                                   //Seteo flag
     notifyListeners();                                    //Notifico a la UI
   }
 
-  /// Traduce códigos de FirebaseAuth a mensajes comprensibles
+  // Traduce códigos de FirebaseAuth a mensajes comprensibles
   String _mapError(Object e) {
     final m = e.toString();                               //Tomo el texto de la excepción
     if (m.contains('user-not-found')) return 'Usuario no encontrado';

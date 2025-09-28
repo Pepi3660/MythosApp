@@ -9,14 +9,17 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../data/categorias.dart';
-import '../../data/geo_ni.dart';
+//import '../../data/categorias.dart';
+//import '../../data/geo_ni.dart';
 import '../../models/relato.dart';
 import '../../viewmodels/relatos_vm.dart';
 import '../../widgets/permission_guard.dart';
+//import 'mapaTarget.dart';
 
 class MapaView extends StatefulWidget {
-  const MapaView({super.key});
+  final MapaTarget? initial; // opcional, si ya la tienes
+  const MapaView({super.key, this.initial});
+
   @override
   State<MapaView> createState() => _MapaViewState();
 }
@@ -31,10 +34,13 @@ class _MapaViewState extends State<MapaView> {
   LatLng? _myPos;
   Relato? _selected;
 
-  // Filtros reales
-  final Set<String> _catActivas = {...kCategorias}; // todas activas por defecto
+  // Filtros (dejamos estructura por si agregas campos luego)
+  // final Set<String> _catActivas = {...kCategorias}; // si tuvieras categorías
   String? _dep;
   String? _muni;
+
+  // Marcador temporal para destinos externos
+  Marker? _tempMarker;
 
   @override
   void initState() {
@@ -44,6 +50,21 @@ class _MapaViewState extends State<MapaView> {
       if (vm.relatos.isEmpty && !vm.cargando) vm.cargar();
     });
     _initLocation();
+
+    // Si recibimos un destino inicial, preparamos el marcador temporal
+    if (widget.initial != null) {
+      final t = widget.initial!;
+      _tempMarker = Marker(
+        markerId: const MarkerId('destino-externo'),
+        position: LatLng(t.lat, t.lng),
+        infoWindow: InfoWindow(title: t.title, snippet: t.snippet),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+        await _moveTo(LatLng(t.lat, t.lng), zoom: 15);
+      });
+    }
   }
 
   Future<void> _initLocation() async {
@@ -81,18 +102,18 @@ class _MapaViewState extends State<MapaView> {
   }
 
   Future<void> _openDirections(Relato r) async {
-    if (r.lat == null || r.lng == null) return;
-    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}');
+    final gp = r.ubicacion;
+    if (gp == null) return;
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${gp.latitude},${gp.longitude}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
-  // ----------------- Filtros (sheet)
+  // ----------------- Filtros (sheet) - por ahora sin lógica real
   Future<void> _openFilterSheet() async {
     final currentDep = _dep;
     final currentMuni = _muni;
-    final currentCats = Set<String>.from(_catActivas);
 
     await showModalBottomSheet(
       context: context,
@@ -101,12 +122,7 @@ class _MapaViewState extends State<MapaView> {
       builder: (ctx) {
         String? tmpDep = currentDep;
         String? tmpMuni = currentMuni;
-        final tmpCats = Set<String>.from(currentCats);
-
         final cs = Theme.of(ctx).colorScheme;
-
-        List<String> munis(String? dep) =>
-            dep == null ? const [] : (kMunicipiosByDep[dep] ?? const []);
 
         return SafeArea(
           child: DraggableScrollableSheet(
@@ -129,41 +145,7 @@ class _MapaViewState extends State<MapaView> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Categorías
-                  Text(
-                    'Categorías',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(ctx).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: -6,
-                    children: [
-                      for (final c in kCategorias)
-                        FilterChip(
-                          label: Text(c),
-                          selected: tmpCats.contains(c),
-                          onSelected: (sel) {
-                            if (sel) {
-                              tmpCats.add(c);
-                            } else {
-                              tmpCats.remove(c);
-                            }
-                            // forza rebuild del sheet
-                            (ctx as Element).markNeedsBuild();
-                          },
-                          selectedColor: cs.primaryContainer,
-                          checkmarkColor: cs.onPrimaryContainer,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Departamento
+                  // Departamento (placeholder)
                   Text(
                     'Departamento',
                     style: GoogleFonts.inter(
@@ -176,19 +158,15 @@ class _MapaViewState extends State<MapaView> {
                   DropdownButtonFormField<String>(
                     isExpanded: true,
                     value: tmpDep,
-                    hint: const Text('Selecciona departamento'),
-                    items: [
-                      const DropdownMenuItem<String>(value: null, child: Text('Todos')),
-                      ...kDepartamentos.map((d) => DropdownMenuItem(value: d, child: Text(d))),
+                    hint: const Text('Todos'),
+                    items: const [
+                      DropdownMenuItem<String>(value: null, child: Text('Todos')),
                     ],
-                    onChanged: (v) {
-                      tmpDep = v;
-                      tmpMuni = null; // reset al cambiar dep
-                    },
+                    onChanged: (v) => tmpDep = v,
                   ),
 
                   const SizedBox(height: 12),
-                  // Municipio (dependiente)
+                  // Municipio (placeholder)
                   Text(
                     'Municipio',
                     style: GoogleFonts.inter(
@@ -201,10 +179,9 @@ class _MapaViewState extends State<MapaView> {
                   DropdownButtonFormField<String>(
                     isExpanded: true,
                     value: tmpMuni,
-                    hint: const Text('Selecciona municipio'),
-                    items: [
-                      const DropdownMenuItem<String>(value: null, child: Text('Todos')),
-                      ...munis(tmpDep).map((m) => DropdownMenuItem(value: m, child: Text(m))),
+                    hint: const Text('Todos'),
+                    items: const [
+                      DropdownMenuItem<String>(value: null, child: Text('Todos')),
                     ],
                     onChanged: (v) => tmpMuni = v,
                   ),
@@ -216,9 +193,6 @@ class _MapaViewState extends State<MapaView> {
                         onPressed: () {
                           tmpDep = null;
                           tmpMuni = null;
-                          tmpCats
-                            ..clear()
-                            ..addAll(kCategorias);
                           (ctx as Element).markNeedsBuild();
                         },
                         icon: const Icon(Icons.clear_all_rounded),
@@ -233,9 +207,6 @@ class _MapaViewState extends State<MapaView> {
                           setState(() {
                             _dep = tmpDep;
                             _muni = tmpMuni;
-                            _catActivas
-                              ..clear()
-                              ..addAll(tmpCats);
                           });
                           Navigator.pop(ctx);
                         },
@@ -307,49 +278,43 @@ class _MapaViewState extends State<MapaView> {
     final vm = context.watch<RelatosVM>();
     final cs = Theme.of(context).colorScheme;
 
-    // Dataset con filtros
-    final base = vm.relatos.where((r) => r.lat != null && r.lng != null).toList();
-    final filtered = base.where((r) {
-      // Categoría: hacemos match con tags o tipo interpretado (depende de tus datos)
-      final matchCat = _catActivas.isEmpty
-          ? true
-          : (r.tags.any((t) => _catActivas.contains(_capitalize(t))) ||
-              _catActivas.contains(_capitalize(r.tipo)));
-      final matchDep = _dep == null ? true : (r.departamento == _dep || r.municipio == _dep);
-      final matchMuni = _muni == null ? true : (r.municipio == _muni);
-      return matchCat && matchDep && matchMuni;
-    }).toList();
+    // Dataset: SOLO relatos con ubicación
+    final base = vm.relatos.where((r) => r.ubicacion != null).toList();
+
+    // Filtros (por ahora no se aplican, porque el modelo Relato actual no tiene dep/muni/categorías)
+    final filtered = base;
 
     final start = filtered.isNotEmpty
-        ? LatLng(filtered.first.lat!, filtered.first.lng!)
+        ? LatLng(filtered.first.ubicacion!.latitude, filtered.first.ubicacion!.longitude)
         : _niDefault;
 
     // Marcadores
     final markers = <Marker>{
       for (final r in filtered)
         Marker(
-          markerId: MarkerId(r.id),
-          position: LatLng(r.lat!, r.lng!),
+          markerId: MarkerId(r.idP),
+          position: LatLng(r.ubicacion!.latitude, r.ubicacion!.longitude),
           onTap: () => setState(() => _selected = r),
           infoWindow: InfoWindow(
-            title: r.titulo,
-            snippet: '${r.autorNombre} • ${r.municipio}${(r.barrio != null && r.barrio!.isNotEmpty) ? " • ${r.barrio}" : ""}',
+            title: r.tipoP == 'texto' ? 'Relato (texto)' : 'Relato (imagen)',
+            snippet: _buildSnippet(r),
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            r.tipoP == 'texto' ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueViolet,
+          ),
         ),
       if (_myPos != null)
         Marker(
           markerId: const MarkerId('me'),
           position: _myPos!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         ),
+      if (_tempMarker != null) _tempMarker!,
     };
 
     return Scaffold(
-      // Sin AppBar: header superpuesto con volver + título
       body: Stack(
         children: [
-          // Google Map
           GoogleMap(
             initialCameraPosition: CameraPosition(target: start, zoom: 12),
             markers: markers,
@@ -367,7 +332,6 @@ class _MapaViewState extends State<MapaView> {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
               child: Row(
                 children: [
-                  // Botón volver
                   Material(
                     color: cs.surface.withValues(alpha: .92),
                     shape: const CircleBorder(),
@@ -379,7 +343,6 @@ class _MapaViewState extends State<MapaView> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Título
                   Container(
                     decoration: BoxDecoration(
                       color: cs.surface.withValues(alpha: .95),
@@ -397,11 +360,7 @@ class _MapaViewState extends State<MapaView> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.map_rounded,
-                          size: 20,
-                          color: cs.primary,
-                        ),
+                        Icon(Icons.map_rounded, size: 20, color: cs.primary),
                         const SizedBox(width: 8),
                         Text(
                           'Mapa de memorias',
@@ -482,13 +441,23 @@ class _MapaViewState extends State<MapaView> {
                     border: Border.all(color: cs.outlineVariant),
                     boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
                   ),
-                  child: const Text('No hay relatos para los filtros actuales'),
+                  child: const Text('No hay relatos con ubicación'),
                 ),
               ),
             ),
         ],
       ),
     );
+  }
+
+  String _buildSnippet(Relato r) {
+    if (r.tipoP == 'texto') {
+      final txt = r.contenido.trim();
+      if (txt.isEmpty) return 'Relato de texto';
+      return txt.length <= 60 ? txt : '${txt.substring(0, 60)}…';
+    } else {
+      return 'Relato con imagen';
+    }
   }
 
   // ---------- Lista (bottom sheet)
@@ -521,7 +490,8 @@ class _MapaViewState extends State<MapaView> {
                       r: items[i],
                       onMapa: () {
                         Navigator.pop(context);
-                        _moveTo(LatLng(items[i].lat!, items[i].lng!), zoom: 15);
+                        final gp = items[i].ubicacion!;
+                        _moveTo(LatLng(gp.latitude, gp.longitude), zoom: 15);
                         setState(() => _selected = items[i]);
                       },
                       onVer: () {
@@ -623,16 +593,9 @@ class _ActionBar extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Volver',
-                    onPressed: () {
-                      final r = GoRouter.of(context);
-                      if (r.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/home');
-                      }
-                    },
-                    icon: const Icon(Icons.arrow_back),
+                    tooltip: 'Cerrar',
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
@@ -653,6 +616,11 @@ class _RelatoCardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tipo = r.tipoP == 'texto' ? 'Texto' : 'Imagen';
+    final snippet = r.tipoP == 'texto'
+        ? (r.contenido.length <= 80 ? r.contenido : '${r.contenido.substring(0, 80)}…')
+        : 'Relato con imagen';
+
     return Container(
       decoration: BoxDecoration(
         color: cs.surfaceContainerHigh,
@@ -663,25 +631,9 @@ class _RelatoCardList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(r.titulo, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(
-            '${r.autorNombre} • ${r.municipio}${(r.barrio != null && r.barrio!.isNotEmpty) ? " • ${r.barrio}" : ""}',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if ((r.cuerpo ?? '').isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(r.cuerpo!, maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: -6,
-            children: [
-              Chip(label: Text(_capitalize(r.tipo))),
-              ...r.tags.map((t) => Chip(label: Text('#${_capitalize(t)}'))),
-            ],
-          ),
+          Text(tipo, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(snippet, maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -696,5 +648,11 @@ class _RelatoCardList extends StatelessWidget {
   }
 }
 
-// helper
-String _capitalize(String s) => s.isEmpty ? s : (s[0].toUpperCase() + s.substring(1));
+// (Opcional) si usas un tipo MapaTarget
+class MapaTarget {
+  final double lat;
+  final double lng;
+  final String? title;
+  final String? snippet;
+  MapaTarget({required this.lat, required this.lng, this.title, this.snippet});
+}

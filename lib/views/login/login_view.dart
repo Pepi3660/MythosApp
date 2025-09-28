@@ -39,8 +39,9 @@ class _LoginScreenState extends State<LoginView> {
     // -> Obtengo el ViewModel
     final vm = context.watch<AuthViewModel>();
 
-    //Colores locales
-    const fernGreen = Color(0xFF457A43);
+    //Colores
+    final cs = Theme.of(context).colorScheme;   // ColorScheme actual (claro/oscuro)
+    final tt = Theme.of(context).textTheme;     // TextTheme actual
 
     return Scaffold(
       resizeToAvoidBottomInset: true,                     //Evita que el teclado tape los campos
@@ -51,9 +52,13 @@ class _LoginScreenState extends State<LoginView> {
             child: Image.asset(
               'assets/FondoLogin.jpg',
               fit: BoxFit.cover,
+              color: cs.brightness == Brightness.dark
+                  ? Colors.black.withOpacity(0.35)
+                  : null,
+              colorBlendMode: cs.brightness == Brightness.dark ? BlendMode.darken : null,
             ),
           ),
-          //Capa blanca recortada con forma de ola para el contenido
+          //Recorte en forma ola para el contenido
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -61,7 +66,7 @@ class _LoginScreenState extends State<LoginView> {
               child: Container(
                 //Altura relativa para dejar la parte superior con la imagen
                 height: MediaQuery.of(context).size.height * 0.78,
-                color: Colors.white,
+                color: cs.surface,
               ),
             ),
           ),
@@ -90,16 +95,14 @@ class _LoginScreenState extends State<LoginView> {
                   // Títulos principales con Google Fonts para un look moderno
                   Text('Bienvenido de vuelta',
                       style: GoogleFonts.poppins(
-                        color: darkOliveGreen,
+                        color: cs.primary,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
                       )),
                   const SizedBox(height: 8),
                   Text('Inicia Sesion con tu cuenta',
-                      style: GoogleFonts.poppins(
-                        color: Colors.black87,
-                        fontSize: 14,
-                      )),
+                      style: tt.bodyMedium
+                  ),
                   const SizedBox(height: 15),
                   // Formulario con validaciones
                   Form(
@@ -138,14 +141,12 @@ class _LoginScreenState extends State<LoginView> {
                             Checkbox(
                               value: vm.rememberMe,          //Binding al VM
                               onChanged: (v) => vm.setRemember(v ?? false), //Actualizo VM
-                              side: const BorderSide(color: fernGreen),
-                              checkColor: Colors.white,                      //Color del “check”
-                              activeColor: fernGreen,
+                              side: BorderSide(color: cs.primary),
+                              checkColor: cs.primary,                      //Color del “check”
+                              activeColor: cs.primary,
                             ),
-                            const Text('Recuerdame',
-                            style: TextStyle(
-                              color: Colors.black87
-                            ),),       // Etiqueta del checkbox
+                            Text('Recuerdame',
+                            style: tt.bodyMedium),       // Etiqueta del checkbox
                             const Spacer(),                  //Empujo el botón a la derecha
                             TextButton(
                               onPressed: () async {          //Acción para recuperar contraseña
@@ -167,7 +168,7 @@ class _LoginScreenState extends State<LoginView> {
                                 );
                               },
                               style: TextButton.styleFrom(
-                                foregroundColor: fernGreen,
+                                foregroundColor: cs.primary,
                               ),
                               child: const Text('¿Olvidate tu contraseña?'),
                             ),
@@ -204,15 +205,15 @@ class _LoginScreenState extends State<LoginView> {
                         // Separador
                         Row(
                           children: [
-                            Expanded(child: Container(height: 1, color: Colors.black12)),
+                            Expanded(child: Container(height: 1, color: cs.outlineVariant)),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
                                 'Inicia Sesión con:',
-                                style: GoogleFonts.poppins(color: Colors.black54, fontSize: 12),
+                                style: tt.bodyMedium,
                               ),
                             ),
-                            Expanded(child: Container(height: 1, color: Colors.black12)),
+                            Expanded(child: Container(height: 1,color: cs.outlineVariant)),
                           ],
                         ),
 
@@ -234,7 +235,7 @@ class _LoginScreenState extends State<LoginView> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('Inicio con Google exitoso')),
                                     );
-                                    context.go('/relatos');
+                                    context.go('/app');
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text(vm.errorMessage ?? 'No fue posible usar Google')),
@@ -247,10 +248,8 @@ class _LoginScreenState extends State<LoginView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('¿No tienes una cuenta?',
-                            style: TextStyle(
-                              color: Colors.black87
-                            ),
+                            Text('¿No tienes una cuenta?  ',
+                            style: tt.bodyMedium
                             ),
                             GestureDetector(
                               //Navegacion a la Pantalla de registro
@@ -260,10 +259,10 @@ class _LoginScreenState extends State<LoginView> {
                                     MaterialPageRoute(builder: (_) => const RegisterView()),
                                   );
                               },
-                              child: const Text(
+                              child: Text(
                                 'Registrate Ahora',
                                 style: TextStyle(
-                                  color: fernGreen,
+                                  color: cs.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -292,19 +291,22 @@ class _SocialCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;   // ColorScheme actual (claro/oscuro)
+    final tt = Theme.of(context).textTheme;     // TextTheme actual
+
     return InkWell(
       onTap: onTap, // si es null, queda deshabilitado
       borderRadius: BorderRadius.circular(28),
       child: Container(
-        width: 56,
-        height: 56,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white,
+          color: cs.surface,
           border: Border.all(color: Colors.black12),
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
         ),
-        child: const Icon(Icons.g_mobiledata, size: 32, color: _LoginScreenState.darkOliveGreen),
+        child: Icon(icon, size: 40, color: cs.primary),
       ),
     );
   }

@@ -1,112 +1,74 @@
-// lib/models/relato.dart
-import 'dart:convert';
+// Contiene el modelo de los relatos
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Modelo de la colección `Publicaciones` (Relatos)
 class Relato {
-  final String id;
-  final String titulo;
-  final String tipo; // 'texto' | 'imagen' | 'video'
-  final String? cuerpo;
-  final List<String> mediaUrls;
-  final double? lat;
-  final double? lng;
-
-  final String? departamento;
-  final String municipio;
-  final String? barrio;
-
-  final List<String> tags;
-  final DateTime fechaCreacion;
-  final String autorNombre;
+  final String idP;                         // Id del documento
+  final DocumentReference? idU;             // Referencia al usuario autor
+  final String tipoP;                       // "texto" | "imagen"
+  final String contenido;                   // Texto o URL de imagen
+  final DateTime fechaCreacion;             // Timestamp
+  final GeoPoint? ubicacion;                // Opcional
 
   Relato({
-    required this.id,
-    required this.titulo,
-    required this.tipo,
-    this.cuerpo,
-    this.mediaUrls = const [],
-    this.lat,
-    this.lng,
-    this.departamento,
-    required this.municipio,
-    this.barrio,
-    this.tags = const [],
+    required this.idP,
+    required this.idU,
+    required this.tipoP,
+    required this.contenido,
     required this.fechaCreacion,
-    required this.autorNombre,
+    this.ubicacion,
   });
 
-  Relato copyWith({
-    String? id,
-    String? titulo,
-    String? tipo,
-    String? cuerpo,
-    List<String>? mediaUrls,
-    double? lat,
-    double? lng,
-    String? departamento,
-    String? municipio,
-    String? barrio,
-    List<String>? tags,
-    DateTime? fechaCreacion,
-    String? autorNombre,
-  }) {
+  factory Relato.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
     return Relato(
-      id: id ?? this.id,
-      titulo: titulo ?? this.titulo,
-      tipo: tipo ?? this.tipo,
-      cuerpo: cuerpo ?? this.cuerpo,
-      mediaUrls: mediaUrls ?? this.mediaUrls,
-      lat: lat ?? this.lat,
-      lng: lng ?? this.lng,
-      departamento: departamento ?? this.departamento,
-      municipio: municipio ?? this.municipio,
-      barrio: barrio ?? this.barrio,
-      tags: tags ?? this.tags,
-      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
-      autorNombre: autorNombre ?? this.autorNombre,
+      idP: d['idP'] as String? ?? doc.id,
+      idU: d['iDU'] is DocumentReference ? d['iDU'] as DocumentReference : null,
+      tipoP: d['TipoP'] as String? ?? 'texto',
+      contenido: d['Contenido'] as String? ?? '',
+      fechaCreacion: (d['FechaCreacion'] as Timestamp).toDate(),
+      ubicacion: d['Ubicacion'] as GeoPoint?,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'titulo': titulo,
-      'tipo': tipo,
-      'cuerpo': cuerpo,
-      'mediaUrls': mediaUrls,
-      'lat': lat,
-      'lng': lng,
-      'departamento': departamento,
-      'municipio': municipio,
-      'barrio': barrio,
-      'tags': tags,
-      'fechaCreacion': fechaCreacion.toIso8601String(),
-      'autorNombre': autorNombre,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'idP': idP,
+        'iDU': idU,
+        'TipoP': tipoP,
+        'Contenido': contenido,
+        'FechaCreacion': Timestamp.fromDate(fechaCreacion),
+        'Ubicacion': ubicacion,
+      };
+}
 
-  factory Relato.fromJson(Map<String, dynamic> map) {
-    return Relato(
-      id: map['id'] as String,
-      titulo: map['titulo'] as String,
-      tipo: map['tipo'] as String,
-      cuerpo: map['cuerpo'] as String?,
-      mediaUrls: (map['mediaUrls'] as List?)?.cast<String>() ?? const [],
-      lat: (map['lat'] as num?)?.toDouble(),
-      lng: (map['lng'] as num?)?.toDouble(),
-      departamento: map['departamento'] as String?,
-      municipio: map['municipio'] as String? ?? 'Desconocido',
-      barrio: map['barrio'] as String?,
-      tags: (map['tags'] as List?)?.cast<String>() ?? const [],
-      fechaCreacion: DateTime.tryParse(map['fechaCreacion'] ?? '') ?? DateTime.now(),
-      autorNombre: map['autorNombre'] as String? ?? 'Anónimo',
+/// Modelo para subcolección `Comentarios`
+class Comentario {
+  final String idC;
+  final DocumentReference? idU;
+  final String texto;
+  final DateTime fechaComentario;
+
+  Comentario({
+    required this.idC,
+    required this.idU,
+    required this.texto,
+    required this.fechaComentario,
+  });
+
+  factory Comentario.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return Comentario(
+      idC: d['iDC'] as String? ?? doc.id,
+      idU: d['iDU'] is DocumentReference ? d['IDU'] as DocumentReference : null,
+      texto: d['Texto'] as String? ?? '',
+      fechaComentario: (d['FechaComentario'] as Timestamp).toDate(),
     );
   }
 
-  static String encodeList(List<Relato> list) =>
-      jsonEncode(list.map((e) => e.toJson()).toList());
-
-  static List<Relato> decodeList(String raw) {
-    final data = jsonDecode(raw) as List;
-    return data.map((e) => Relato.fromJson(Map<String, dynamic>.from(e))).toList();
-  }
+  Map<String, dynamic> toMap() => {
+        'iDC': idC,
+        'iDU': idU,
+        'Texto': texto,
+        'FechaComentario': Timestamp.fromDate(fechaComentario),
+      };
 }

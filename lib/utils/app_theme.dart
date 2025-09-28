@@ -172,7 +172,7 @@ class AppTheme {
       primary: _primaryGreenLight,
       secondary: _accentGold,
       tertiary: _culturalBlue,
-      surface: const Color(0xFF121212),
+      surface:  const Color(0xFF282828),
       brightness: Brightness.dark,
     );
 
@@ -218,7 +218,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       textTheme: textTheme,
-      scaffoldBackgroundColor: const Color(0xFF0A0A0A),
+      scaffoldBackgroundColor: const Color(0xFF282828),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
