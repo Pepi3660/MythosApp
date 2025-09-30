@@ -9,6 +9,10 @@ class Relato {
   final String contenido;                   // Texto o URL de imagen
   final DateTime fechaCreacion;             // Timestamp
   final GeoPoint? ubicacion;                // Opcional
+  final String titulo;                      //Titulo de la publicacion
+  final String municipio;                   //Muncipio del que proviene
+  final String categoria;                   //Categoria
+  final int? likes;
 
   Relato({
     required this.idP,
@@ -17,6 +21,10 @@ class Relato {
     required this.contenido,
     required this.fechaCreacion,
     this.ubicacion,
+    required this.titulo,
+    required this.municipio,
+    required this.categoria,
+    this.likes,
   });
 
   factory Relato.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -28,6 +36,10 @@ class Relato {
       contenido: d['Contenido'] as String? ?? '',
       fechaCreacion: (d['FechaCreacion'] as Timestamp).toDate(),
       ubicacion: d['Ubicacion'] as GeoPoint?,
+      titulo: d['Titulo'] as String? ?? '',
+      municipio: d['Municipio'] as String? ?? '',
+      categoria: d['Categoria'] as String? ?? '',
+      likes:d['likes'] as int? ?? 0,
     );
   }
 
@@ -38,6 +50,10 @@ class Relato {
         'Contenido': contenido,
         'FechaCreacion': Timestamp.fromDate(fechaCreacion),
         'Ubicacion': ubicacion,
+        'Titulo': titulo,
+        'Municipio': municipio,
+        'Categoria': categoria,
+        'likes': likes,
       };
 }
 

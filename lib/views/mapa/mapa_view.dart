@@ -25,16 +25,16 @@ class MapaView extends StatefulWidget {
 }
 
 class _MapaViewState extends State<MapaView> {
-  // ----------------- Mapa
+  // Mapa
   static const _niDefault = LatLng(12.1364, -86.2514);
   GoogleMapController? _gm;
   MapType _mapType = MapType.normal;
 
-  // ----------------- Estado
+  //Estado
   LatLng? _myPos;
   Relato? _selected;
 
-  // Filtros (dejamos estructura por si agregas campos luego)
+  // Filtros
   // final Set<String> _catActivas = {...kCategorias}; // si tuvieras categorías
   String? _dep;
   String? _muni;
@@ -110,7 +110,7 @@ class _MapaViewState extends State<MapaView> {
     }
   }
 
-  // ----------------- Filtros (sheet) - por ahora sin lógica real
+  // Filtros (sheet) - por ahora sin lógica real
   Future<void> _openFilterSheet() async {
     final currentDep = _dep;
     final currentMuni = _muni;
@@ -227,7 +227,7 @@ class _MapaViewState extends State<MapaView> {
     );
   }
 
-  // ----------------- Capas (map type)
+  //Capas (map type)
   Future<void> _openLayersSheet() async {
     await showModalBottomSheet(
       context: context,
@@ -460,7 +460,7 @@ class _MapaViewState extends State<MapaView> {
     }
   }
 
-  // ---------- Lista (bottom sheet)
+  //Lista (bottom sheet)
   Future<void> _openListBottomSheet(List<Relato> items) async {
     final cs = Theme.of(context).colorScheme;
     await showModalBottomSheet(
@@ -496,7 +496,7 @@ class _MapaViewState extends State<MapaView> {
                       },
                       onVer: () {
                         Navigator.pop(context);
-                        context.push('/relatos/detalle', extra: items[i]);
+                        context.push('/relatos', extra: items[i]);
                       },
                     ),
                     separatorBuilder: (_, __) => const SizedBox(height: 12),

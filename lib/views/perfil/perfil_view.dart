@@ -192,7 +192,7 @@ class PerfilView extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    '8',                          // provisional
+                    '0',                          // provisional
                     'Eventos\nCreados',
                     Icons.event,
                     scheme.secondary,
@@ -201,7 +201,7 @@ class PerfilView extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    '156',                        // provisional
+                    '0',                        // provisional
                     'Puntos de\nCultura',
                     Icons.star,
                     scheme.tertiary,

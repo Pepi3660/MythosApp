@@ -16,45 +16,99 @@ class RelatosVM extends ChangeNotifier {
   String? error;
   List<Relato> relatos = [];
 
+  // Carga la lista de relatos
   Future<void> cargar() async {
     try {
-      cargando = true; error = null; notifyListeners();
+      cargando = true;
+      error = null;
+      notifyListeners();
+
       relatos = await _service.feed();
     } catch (e) {
       error = e.toString();
     } finally {
-      cargando = false; notifyListeners();
+      cargando = false;
+      notifyListeners();
     }
   }
 
-  Future<String> crearTexto(String texto, {GeoPoint? ubicacion}) async {
+  // Crea un relato de texto.
+  Future<String> crearTexto({
+    required String texto,
+    required String titulo,
+    required String municipio,
+    required String categoria,
+    GeoPoint? ubicacion,
+  }) async {
     try {
-      cargando = true; notifyListeners();
+      cargando = true;
+      notifyListeners();
+
       final id = await _service.crearRelato(
         tipoP: 'texto',
         contenido: texto,
+        titulo: titulo,
+        municipio: municipio,
+        categoria: categoria,
         ubicacion: ubicacion,
       );
+
       await cargar();
       return id;
     } finally {
-      cargando = false; notifyListeners();
+      cargando = false;
+      notifyListeners();
     }
   }
 
-  Future<String> crearImagen(File imagen, {GeoPoint? ubicacion}) async {
+  // Crea un relato de imagen.
+  Future<String> crearImagen({
+    required File imagen,
+    required String titulo,
+    required String municipio,
+    required String categoria,
+    GeoPoint? ubicacion,
+  }) async {
     try {
-      cargando = true; notifyListeners();
+      cargando = true;
+      notifyListeners();
+
       final id = await _service.crearRelato(
         tipoP: 'imagen',
         contenido: '',
         imagen: imagen,
+        titulo: titulo,
+        municipio: municipio,
+        categoria: categoria,
         ubicacion: ubicacion,
       );
+
       await cargar();
       return id;
     } finally {
-      cargando = false; notifyListeners();
+      cargando = false;
+      notifyListeners();
+    }
+  }
+
+  // Nuevo método para crear un comentario en un relato.
+  Future<void> crearComentario({
+    required String idRelato,
+    required String texto,
+    DateTime? fecha,
+  }) async {
+    try {
+      cargando = true;
+      notifyListeners();
+
+      // Llama al servicio para agregar el comentario
+      await _service.agregarComentario(idRelato, texto);
+
+      // Si deseas reflejar cambios de inmediato en la lista de relatos
+      await cargar();
+    } finally {
+      cargando = false;
+      notifyListeners();
     }
   }
 }

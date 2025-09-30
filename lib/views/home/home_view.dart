@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,9 +24,6 @@ class HomeView extends StatelessWidget {
       _HomeItem('Buscar', Icons.search_outlined, '/search', 'Encuentra contenido específico'),
       _HomeItem('Configuración', Icons.settings_outlined, '/settings', 'Ajustes y privacidad'),
     ];
-
-    // TODO: Reemplaza por el nombre real desde tu VM/usuario autenticado
-    const nombreUsuario = 'Visitante';
 
     return Scaffold(
       appBar: AppBar(
@@ -55,13 +54,7 @@ class HomeView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  Text(
-                    'Hola, $nombreUsuario 👋',
-                    style: GoogleFonts.poppins(
-                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
+                    _saludoWidget(context),
                   const SizedBox(height: 6),
                   Text(
                     '¿Qué te gustaría explorar hoy?',
@@ -210,7 +203,7 @@ class _HomeCard extends StatelessWidget {
         ),
       ),
     );
-   }
+  }
 }
 
 // Método helper para la sección destacada
@@ -252,7 +245,7 @@ Widget _buildFeaturedSection(BuildContext context) {
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: () => context.go('/relatos/crear'),
+          onPressed: () => context.go('/relatos'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: scheme.primary,
@@ -266,6 +259,44 @@ Widget _buildFeaturedSection(BuildContext context) {
           ),
         ),
       ],
+    ),
+  );
+}
+
+//Saludo dinámico
+Widget _saludoWidget(BuildContext context) {
+  return StreamBuilder<User?>(
+    stream: FirebaseAuth.instance.authStateChanges(),
+    builder: (context, snapAuth) {
+      final user = snapAuth.data;
+      if (user == null) return _saludoText(context, 'Visitante');
+
+      final dn = (user.displayName ?? '').trim();
+      if (dn.isNotEmpty) return _saludoText(context, dn);
+
+      final docRef = FirebaseFirestore.instance.collection('usuarios').doc(user.uid);
+      return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        future: docRef.get(),
+        builder: (context, snapUserDoc) {
+          if (snapUserDoc.connectionState == ConnectionState.waiting) {
+            return _saludoText(context, 'Visitante'); // placeholder
+          }
+          final data = snapUserDoc.data?.data();
+          final nombre = (data?['nombre'] ?? '').toString().trim();
+          return _saludoText(context, nombre.isEmpty ? 'Visitante' : nombre);
+        },
+      );
+    },
+  );
+}
+
+Widget _saludoText(BuildContext context, String nombre) {
+  final scheme = Theme.of(context).colorScheme;
+  return Text(
+    'Hola, $nombre 👋',
+    style: GoogleFonts.poppins(
+      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+      color: scheme.onSurfaceVariant,
     ),
   );
 }

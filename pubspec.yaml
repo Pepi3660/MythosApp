@@ -61,9 +61,9 @@ flutter_native_splash:
   color: "#FFFFFF"
   # Color de fondo para modo oscuro
   color_dark: "#282828"   # mismo tono que esta AppTheme.dark
-  image: assets/LogoV1.png
+  image: assets/LogoP.png
   android_12:
-    image: assets/LogoV1.png
+    image: assets/LogoP.png
     icon_background_color: "#FFFFFF"
     icon_background_color_dark: "#282828"
 

@@ -16,14 +16,27 @@ class RelatoNuevoPage extends StatefulWidget {
 
 class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
   final _form = GlobalKey<FormState>();
-  final _textoCtrl = TextEditingController();
+
+  // Modo de publicación
   String _modo = 'texto'; // 'texto' | 'imagen'
+
+  // Contenido
+  final _textoCtrl = TextEditingController();
   File? _img;
+
+  //campos requeridos
+  final _tituloCtrl = TextEditingController();
+  final _municipioCtrl = TextEditingController();
+  String? _categoria; // obligatorio
+
+  // Ubicación
   GeoPoint? _ubic;
 
   @override
   void dispose() {
     _textoCtrl.dispose();
+    _tituloCtrl.dispose();
+    _municipioCtrl.dispose();
     super.dispose();
   }
 
@@ -33,10 +46,14 @@ class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: darkOliveGreen, fontSize: 16),
-      filled: true, fillColor: lightGreen,
+      filled: true,
+      fillColor: lightGreen,
       prefixIcon: Icon(icon, color: darkOliveGreen),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
     );
   }
 
@@ -47,28 +64,57 @@ class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
 
   Future<void> _submit() async {
     final vm = context.read<RelatosVM>();
+
+    // Validaciones base
+    if (!_form.currentState!.validate()) return;
+
     try {
       if (_modo == 'texto') {
-        if (!_form.currentState!.validate()) return;
-        await vm.crearTexto(_textoCtrl.text.trim(), ubicacion: _ubic);
+        // Publicar texto
+        await vm.crearTexto(
+          texto: _textoCtrl.text.trim(),
+          titulo: _tituloCtrl.text.trim(),
+          municipio: _municipioCtrl.text.trim(),
+          categoria: _categoria!.trim(),
+          ubicacion: _ubic,
+        );
       } else {
+        // Publicar imagen
         if (_img == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una imagen')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Selecciona una imagen')));
           return;
         }
-        await vm.crearImagen(_img!, ubicacion: _ubic);
+        await vm.crearImagen(
+          imagen: _img!,
+          titulo: _tituloCtrl.text.trim(),
+          municipio: _municipioCtrl.text.trim(),
+          categoria: _categoria!.trim(),
+          ubicacion: _ubic,
+        );
       }
+
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<RelatosVM>();
+    final cs = Theme.of(context).colorScheme;
+
+    // Opciones de categorías (ajústalas a tu taxonomía real)
+    const categorias = <String>[
+      'Cuento / Tradición',
+      'Gastronomía',
+      'Artesanía',
+      'Música / Danza',
+      'Historia local',
+      'Costumbre',
+    ];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nuevo relato')),
@@ -92,12 +138,63 @@ class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
                 ),
                 const SizedBox(height: 16),
 
+                //Campos obligatorios nuevos
+                TextFormField(
+                  controller: _tituloCtrl,
+                  style: const TextStyle(color: Color(0xFF326430), fontWeight: FontWeight.w600),
+                  decoration: _decor('Título del relato', Icons.title),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _municipioCtrl,
+                  style: const TextStyle(color: Color(0xFF326430)),
+                  decoration: _decor('Municipio', Icons.location_city_outlined),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+
+                DropdownButtonFormField<String>(
+                  value: _categoria,
+                  style: const TextStyle(color: Color(0xFF326430), fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                      labelText: 'Categoría',
+                      labelStyle: const TextStyle(
+                        color: Color(0xFF326430), // darkOliveGreen solo en label
+                        fontWeight: FontWeight.w600,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.category_outlined,
+                        color: Color(0xFF326430),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFD7E6DB),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  dropdownColor: const Color(0xFFD7E6DB),
+                  items: categorias
+                      .map((c) => DropdownMenuItem<String>(value: c, child: Text(c)))
+                      .toList(),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una categoría' : null,
+                  onChanged: (v) => setState(() => _categoria = v),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Contenido según modo
                 if (_modo == 'texto') ...[
                   TextFormField(
-                    style: const TextStyle(color: Color(0xFF326430)),
                     controller: _textoCtrl,
-                    minLines: 5, maxLines: 8,
-                    validator: (v) => (v==null || v.trim().isEmpty) ? 'Escribe algo' : null,
+                    style: const TextStyle(color: Color(0xFF326430)),
+                    minLines: 5,
+                    maxLines: 8,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Escribe algo' : null,
                     decoration: _decor('¿Qué quieres contar?', Icons.edit_outlined),
                   ),
                 ] else ...[
@@ -122,8 +219,7 @@ class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
 
                 const SizedBox(height: 16),
 
-                // (Opcional) ubicación  aquí podrías abrir tu mapa para elegirla
-                // Dejo un toggle simple para limpiar/poner null:
+                //Ubicación
                 Row(
                   children: [
                     const Icon(Icons.place_outlined, size: 18),
@@ -143,6 +239,12 @@ class _RelatoNuevoPageState extends State<RelatoNuevoPage> {
                   loading: vm.cargando,
                   onPressed: _submit,
                 ),
+                const SizedBox(height: 8),
+                if (vm.cargando)
+                  LinearProgressIndicator(
+                    color: cs.primary,
+                    backgroundColor: cs.surfaceVariant,
+                  ),
               ],
             ),
           ),

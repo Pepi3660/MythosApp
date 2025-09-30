@@ -51,7 +51,7 @@ class BibliotecaView extends StatelessWidget {
             if (r.canPop()) {
               context.pop();
             } else {
-              context.go('/home');
+              context.go('/app');
             }
           },
           icon: const Icon(Icons.arrow_back),
@@ -115,7 +115,7 @@ class BibliotecaView extends StatelessWidget {
                           Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton.icon(
-                              onPressed: () => context.push('/relatos/detalle', extra: r),
+                              onPressed: () => context.push('/relatos', extra: r),
                               icon: const Icon(Icons.menu_book_outlined),
                               label: const Text('Leer'),
                             ),
